@@ -5,6 +5,7 @@
 #include <memory>
 #include <list>
 #include <fstream>
+#include <vector>
 
 namespace BASE
 {
@@ -26,6 +27,7 @@ private:
 
 enum class LoggerLevel  //日志级别
 {
+    UNKONW = 0,
     DEBUG = 1,
     INFO = 2,
     WARN = 3,
@@ -38,9 +40,25 @@ class LoggerFormat  //日志格式化
 {
 public:
     typedef std::shared_ptr<LoggerFormat> ptr;
+
+    class FormatItem//不同的子类输出不同的字段
+    {
+    public:
+        typedef std::shared_ptr<FormatItem> ptr;
+        virtual ~FormatItem(){}
+        virtual void format(std::ostream& os, LoggerContent::ptr content) = 0;
+    };
+    
 public:
+    LoggerFormat(const std::string& pattern);
+
     std::string format(LoggerContent::ptr content);
+
 private:
+    void init();    //去做用户输入的pattern的解析工作
+private:
+    std::string pattern_;    //存储用户输入的原始格式
+    std::vector<FormatItem::ptr> formats_;  //用户指定了哪些输出格式都解析到这个vector里面
 };
 
 

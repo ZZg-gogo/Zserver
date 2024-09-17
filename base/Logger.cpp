@@ -1,17 +1,32 @@
 #include "Logger.h"
 
+#include <sstream>
 #include <iostream>
 
 namespace BASE
 {
 
+struct LoggerLevel2Str
+{
+    LoggerLevel level;
+    const char * str;
+};
+ 
+//存储枚举类型到字符串的映射
+static LoggerLevel2Str LoggerLevel2StrArr[] = 
+{
+    {LoggerLevel::DEBUG, "DEBUG"},
+    {LoggerLevel::INFO, "INFO"},
+    {LoggerLevel::WARN, "WARN"},
+    {LoggerLevel::ERROR, "ERROR"},
+    {LoggerLevel::FAIL, "FAIL"},
+    {LoggerLevel::UNKONW, "UNKONW"}
+};
 
 Logger::Logger(const std::string &name) :
     name_(name),
     level_(LoggerLevel::INFO)
-{
-    
-}
+{}
 
 void Logger::addAppend(LoggerAppend::ptr append)
 {
@@ -95,6 +110,27 @@ void StdoutLogAppend::log(LoggerLevel level, LoggerContent::ptr content)
 }
 
 
+LoggerFormat::LoggerFormat(const std::string& pattern) : 
+    pattern_(pattern)
+{
+    init();
+}
+
+void LoggerFormat::init()
+{
+    
+}
+
+std::string LoggerFormat::format(LoggerContent::ptr content)
+{
+    std::stringstream ss;
+    for (auto it = formats_.begin(); formats_.end() != it; ++it)
+    {
+        (*it)->format(ss, content);
+    }
+    
+    return ss.str();
+}
 
 
 
