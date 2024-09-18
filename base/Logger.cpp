@@ -6,6 +6,7 @@
 #include <cctype>
 #include <map>
 #include <functional>
+#include <stdarg.h>
 
 namespace BASE
 {
@@ -88,7 +89,7 @@ void Logger::log(LoggerLevel level, LoggerContent::ptr content)
     
     for (auto it = appenders_.begin(); appenders_.end() != it; ++it)
     {
-        (*it)->log(level, content);
+        (*it)->log(shared_from_this(), level, content);
     }
     
 }
@@ -121,7 +122,7 @@ FileLogAppend::FileLogAppend(const std::string & filename) :
 
 }
 
-void FileLogAppend::log(LoggerLevel level, LoggerContent::ptr content)
+void FileLogAppend::log(Logger::ptr logger, LoggerLevel level, LoggerContent::ptr content)
 {
     filestream_<<format_->format(content);
 }
@@ -136,7 +137,7 @@ void FileLogAppend::reopen()
     filestream_.open(filename_);
 }
 
-void StdoutLogAppend::log(LoggerLevel level, LoggerContent::ptr content)
+void StdoutLogAppend::log(Logger::ptr logger, LoggerLevel level, LoggerContent::ptr content)
 {
     std::cout<<format_->format(content);
 }
@@ -151,10 +152,10 @@ public:
 
     virtual void format(std::ostream& os, LoggerContent::ptr content) override
     {
-        
+        os<< content->getContent();
     }
 private:
-}
+};
 
 class LevelFormatItem : public LoggerFormat::FormatItem
 {
@@ -163,10 +164,10 @@ public:
 
     virtual void format(std::ostream& os, LoggerContent::ptr content) override
     {
-        
+        os<< LoggerLevel2StrFun(content->getLoggerLevel());
     }
 private:
-}
+};
 
 
 class ElapseFormatItem : public LoggerFormat::FormatItem
@@ -179,7 +180,7 @@ public:
         
     }
 private:
-}
+};
 
 class NameFormatItem : public LoggerFormat::FormatItem
 {
@@ -191,7 +192,7 @@ public:
         
     }
 private:
-}
+};
 
 class ThreadIdFormatItem : public LoggerFormat::FormatItem
 {
@@ -203,7 +204,7 @@ public:
         
     }
 private:
-}
+};
 
 class NewLineFormatItem : public LoggerFormat::FormatItem
 {
@@ -212,22 +213,11 @@ public:
 
     virtual void format(std::ostream& os, LoggerContent::ptr content) override
     {
-        
+        os << std::endl;
     }
 private:
-}
+};
 
-class NewLineFormatItem : public LoggerFormat::FormatItem
-{
-public:
-    NewLineFormatItem(const std::string& str = ""){}
-
-    virtual void format(std::ostream& os, LoggerContent::ptr content) override
-    {
-        
-    }
-private:
-}
 
 class DateTimeFormatItem : public LoggerFormat::FormatItem
 {
@@ -243,7 +233,7 @@ public:
     }
 private:
     std::string format_;
-}
+};
 
 class FilenameFormatItem : public LoggerFormat::FormatItem
 {
@@ -252,10 +242,10 @@ public:
 
     virtual void format(std::ostream& os, LoggerContent::ptr content) override
     {
-        
+        os<<content->getFileName();
     }
 private:
-}
+};
 
 class LineFormatItem : public LoggerFormat::FormatItem
 {
@@ -264,10 +254,11 @@ public:
 
     virtual void format(std::ostream& os, LoggerContent::ptr content) override
     {
-        
+        os<<content->getLine();
     }
 private:
-}
+};
+
 
 class TabFormatItem : public LoggerFormat::FormatItem
 {
@@ -276,25 +267,13 @@ public:
 
     virtual void format(std::ostream& os, LoggerContent::ptr content) override
     {
-        
+        os<<'\t';
     }
 private:
-}
-
-class TabFormatItem : public LoggerFormat::FormatItem
-{
-public:
-    TabFormatItem(const std::string& str = ""){}
-
-    virtual void format(std::ostream& os, LoggerContent::ptr content) override
-    {
-        
-    }
-private:
-}
+};
 
 
-class StringFormatItem : public LogFormatter::FormatItem {
+class StringFormatItem : public LoggerFormat::FormatItem {
 public:
     StringFormatItem(const std::string& str) :
         str_(str) 
@@ -302,7 +281,7 @@ public:
 
     virtual void format(std::ostream& os, LoggerContent::ptr content) override 
     {
-        os << m_string;
+        os << str_;
     }
 private:
     std::string str_;
@@ -315,10 +294,10 @@ public:
 
     virtual void format(std::ostream& os, LoggerContent::ptr content) override
     {
-        
+        os<<content->getFiberId();
     }
 private:
-}
+};
 
 
 class ThreadNameFormatItem : public LoggerFormat::FormatItem
@@ -332,7 +311,7 @@ public:
     }
 private:
 
-}
+};
 
 LoggerFormat::LoggerFormat(const std::string& pattern) : 
     pattern_(pattern)
@@ -407,7 +386,6 @@ void LoggerFormat::init()
                 {
                     str = pattern_.substr(i+1);
                 }
-                
             }
         }//end while
 

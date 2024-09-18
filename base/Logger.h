@@ -94,7 +94,7 @@ public:
     typedef std::shared_ptr<LoggerAppend> ptr;
 
 public:
-    virtual void log(LoggerLevel level, LoggerContent::ptr content) = 0;
+    virtual void log(Logger::ptr logger, LoggerLevel level, LoggerContent::ptr content) = 0;
     virtual ~LoggerAppend() {}
     //设置日志的输出格式
     void setFormat(LoggerFormat::ptr format) {format_ = format;}
@@ -103,7 +103,7 @@ protected:
     LoggerFormat::ptr format_;
 };
 
-class Logger    //日志器
+class Logger : public std::enable_shared_from_this<Logger>    //日志器
 {
 public:
     typedef std::shared_ptr<Logger> ptr;
@@ -131,7 +131,7 @@ public:
 
     //设置日志格式器
     void setFormatter(const std::string& val);
-    void setFormatter(LogFormatter::ptr formater);
+    void setFormatter(LoggerFormat::ptr formater);
     LoggerFormat::ptr getFormatter();
 private:
     std::string name_;
@@ -149,7 +149,7 @@ public:
     typedef std::shared_ptr<StdoutLogAppend> ptr;
 
 public:
-    virtual void log(LoggerLevel level, LoggerContent::ptr content) override;
+    virtual void log(Logger::ptr logger, LoggerLevel level, LoggerContent::ptr content) override;
 
 private:
 };
@@ -161,7 +161,7 @@ public:
 
 public:
     FileLogAppend(const std::string & filename);    //输出到哪个文件
-    virtual void log(LoggerLevel level, LoggerContent::ptr content) override;
+    virtual void log(Logger::ptr logger, LoggerLevel level, LoggerContent::ptr content) override;
     void reopen();  //需要打开文件
 private:
     std::string filename_;  //文件名
