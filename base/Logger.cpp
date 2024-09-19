@@ -7,6 +7,7 @@
 #include <map>
 #include <functional>
 #include <stdarg.h>
+#include <time.h>
 
 namespace BASE
 {
@@ -60,11 +61,17 @@ static LoggerLevel Str2LoggerLevelFun(const std::string& str)
 
 Logger::Logger(const std::string &name) :
     name_(name),
-    level_(LoggerLevel::INFO)
+    level_(LoggerLevel::INFO),
+    formater_(new LoggerFormat("%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"))
 {}
 
 void Logger::addAppend(LoggerAppend::ptr append)
 {
+    if (!append->getFormat())
+    {
+        append->setFormat(formater_);
+    }
+    
     appenders_.push_back(append);
 }
 
@@ -93,6 +100,25 @@ void Logger::log(LoggerLevel level, LoggerContent::ptr content)
     }
     
 }
+
+void Logger::setFormatter(const std::string& val)
+{
+    formater_.reset(new LoggerFormat(val));
+    for (auto it = appenders_.begin(); appenders_.end() != it; ++it)
+    {
+        (*it)->setFormat(formater_);
+    }
+}
+void Logger::setFormatter(LoggerFormat::ptr formater)
+{
+    formater_ = formater;
+    for (auto it = appenders_.begin(); appenders_.end() != it; ++it)
+    {
+        (*it)->setFormat(formater_);
+    }
+}
+
+
 void Logger::debug(LoggerContent::ptr content)
 {
     log(LoggerLevel::DEBUG, content);
@@ -189,7 +215,7 @@ public:
 
     virtual void format(std::ostream& os, LoggerContent::ptr content) override
     {
-        
+        os << content->getLogger()->getLoggerName();
     }
 private:
 };
@@ -201,7 +227,7 @@ public:
 
     virtual void format(std::ostream& os, LoggerContent::ptr content) override
     {
-        
+        os << content->getThreadId();
     }
 private:
 };
@@ -225,11 +251,22 @@ public:
     DateTimeFormatItem(const std::string& str = "%Y-%m-%d %H:%M:%S") : 
         format_(str)
     {
+        if (str.empty())
+        {
+            format_ = "%Y-%m-%d %H:%M:%S";
+        }
+        
     }
 
     virtual void format(std::ostream& os, LoggerContent::ptr content) override
     {
-        
+        char timeBuf[64];
+
+        struct tm timeinfo;
+        time_t t = content->getTime();
+        localtime_r(&t, &timeinfo);
+        strftime(timeBuf, sizeof(timeBuf), format_.c_str(), &timeinfo);
+        os << timeBuf;
     }
 private:
     std::string format_;
@@ -307,7 +344,7 @@ public:
 
     virtual void format(std::ostream& os, LoggerContent::ptr content) override
     {
-        
+        os << content->getThreadName();
     }
 private:
 
@@ -490,6 +527,21 @@ void LoggerContent::format(const char* fmt, va_list al)
         content_ << std::string(buf, len);
         free(buf);
     }
+}
+
+
+LoggerContent::LoggerContent(std::shared_ptr<Logger> logger, LoggerLevel level, const char * fileName,
+                            int line, int threadId, int fiberId, time_t t, const std::string& threadName) :
+        logger_(logger),
+        level_(level),
+        file_(fileName),
+        line_(line), 
+        threadId_(threadId), 
+        fiberId_(fiberId),
+        time_(t), 
+        threadName_(threadName)
+{
+
 }
 
 

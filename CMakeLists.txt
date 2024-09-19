@@ -4,7 +4,7 @@ project (ZZG_SERVER)
 
 set(CMAKE_C_COMPILER "/opt/rh/devtoolset-9/root/usr/bin/gcc")
 set(CMAKE_CXX_COMPILER "/opt/rh/devtoolset-9/root/usr/bin/g++")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -g -Wall -O0 -Wno-unused-variable -pthread")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -ggdb -Wall -O0 -Wno-unused-variable -pthread")
 
 link_directories(
     ${PROJECT_SOURCE_DIR}/lib
@@ -13,7 +13,7 @@ link_directories(
 )
 
 set(base_src
-../base/Logger.h
+../base/Logger.cpp
 )
 
 set(src
@@ -21,6 +21,6 @@ set(src
 )
 
 
-add_executable(MyServer ${src})
+add_executable(MyServer ${src} ${base_src})
 
 

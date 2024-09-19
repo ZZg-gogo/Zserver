@@ -29,10 +29,10 @@ class LoggerContent //日志内容
 {
 public:
     typedef std::shared_ptr<LoggerContent> ptr;
-    LoggerContent(Logger::ptr logger, LoggerLevel level, const char * fileName,
+    LoggerContent(std::shared_ptr<Logger> logger, LoggerLevel level, const char * fileName,
         int line, int threadId, int fiberId, time_t t, const std::string& threadName);
 
-    Logger::ptr getLogger() const {return logger_;}
+    std::shared_ptr<Logger> getLogger() const {return logger_;}
     LoggerLevel getLoggerLevel() const {return level_;}
     const char * getFileName() const {return file_;}
     int getLine() const {return line_;}
@@ -47,7 +47,7 @@ public:
     void format(const char* fmt, va_list al);
 
 private:
-    Logger::ptr logger_;    //日志器
+    std::shared_ptr<Logger> logger_;    //日志器
     LoggerLevel level_; //日志等级
     const char * file_; //文件名
     int line_;  //行号
@@ -94,7 +94,7 @@ public:
     typedef std::shared_ptr<LoggerAppend> ptr;
 
 public:
-    virtual void log(Logger::ptr logger, LoggerLevel level, LoggerContent::ptr content) = 0;
+    virtual void log(std::shared_ptr<Logger> logger, LoggerLevel level, LoggerContent::ptr content) = 0;
     virtual ~LoggerAppend() {}
     //设置日志的输出格式
     void setFormat(LoggerFormat::ptr format) {format_ = format;}
