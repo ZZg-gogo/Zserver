@@ -1,7 +1,8 @@
 #include <iostream>
 #include <time.h>
-#include "base/Logger.h"
 
+#include "base/Logger.h"
+#include "base/Singleton.h"
 
 int main(int argc, char ** argv)
 {
