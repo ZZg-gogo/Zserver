@@ -544,5 +544,16 @@ LoggerContent::LoggerContent(std::shared_ptr<Logger> logger, LoggerLevel level, 
 
 }
 
+LoggerContentWrap::LoggerContentWrap(LoggerContent::ptr content) :
+    content_(content)
+{
+
+}
+
+
+LoggerContentWrap::~LoggerContentWrap()
+{
+    content_->getLogger()->log(content_->getLoggerLevel(), content_);
+}
 
 }//end namespace

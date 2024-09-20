@@ -59,7 +59,18 @@ private:
 };
 
 
+class LoggerContentWrap //日志内容包装器
+{
+public:
+    LoggerContentWrap(LoggerContent::ptr content);
+    ~LoggerContentWrap();
 
+    LoggerContent::ptr getContent() {return content_;}
+
+    std::stringstream& getSS(){return content_->getSS();}
+private:
+    LoggerContent::ptr content_;
+};
 
 
 class LoggerFormat  //日志格式化
@@ -102,6 +113,7 @@ public:
 protected:
     LoggerFormat::ptr format_;
 };
+
 
 class Logger : public std::enable_shared_from_this<Logger>    //日志器
 {

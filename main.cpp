@@ -11,6 +11,6 @@ int main(int argc, char ** argv)
     BASE::LoggerContent::ptr content(new BASE::LoggerContent(logger, BASE::LoggerLevel::INFO, __FILE__,
         __LINE__, 888, 777, time(nullptr), "Mythread"));
     content->format("Hello World %s", "ZZH");
-    logger->log(content->getLoggerLevel(), content);
+    BASE::LoggerContentWrap wrap(content);
     return 0;
 }
