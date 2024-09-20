@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 2.6)
 
 project (ZZG_SERVER)
 
-#set(CMAKE_C_COMPILER "/opt/rh/devtoolset-9/root/usr/bin/gcc")
-#set(CMAKE_CXX_COMPILER "/opt/rh/devtoolset-9/root/usr/bin/g++")
+set(CMAKE_C_COMPILER "/opt/rh/devtoolset-9/root/usr/bin/gcc")
+set(CMAKE_CXX_COMPILER "/opt/rh/devtoolset-9/root/usr/bin/g++")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -ggdb -Wall -O0 -Wno-unused-variable -pthread")
 
 link_directories(
@@ -14,6 +14,7 @@ link_directories(
 
 set(base_src
 ../base/Logger.cpp
+../base/util.cpp
 )
 
 set(src

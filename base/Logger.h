@@ -10,8 +10,54 @@
 #include <mutex>
 
 
+#define LOG_STREAM_LOGGER(logger, level)\
+    if (logger->getLevel() <= level)\
+        BASE::LoggerContentWrap(std::make_shared<BASE::LoggerContent>(BASE::LoggerContent(logger, level, __FILE__,\
+        __LINE__, BASE::getThreadId(), BASE::getFiberId(), time(nullptr), "Mythread"))).getSS()
+
+#define LOG_DEBUG(logger)\
+    LOG_STREAM_LOGGER(logger, BASE::LoggerLevel::DEBUG)
+
+#define LOG_INFO(logger)\
+    LOG_STREAM_LOGGER(logger, BASE::LoggerLevel::INFO)
+
+
+#define LOG_WARN(logger)\
+    LOG_STREAM_LOGGER(logger, BASE::LoggerLevel::WARN)
+
+#define LOG_ERROR(logger)\
+    LOG_STREAM_LOGGER(logger, BASE::LoggerLevel::ERROR)
+
+#define LOG_FAIL(logger)\
+    LOG_STREAM_LOGGER(logger, BASE::LoggerLevel::FAIL)
+
+
+/**************************************对日志进行格式化输出***************************************************************/
+#define LOG_FORMAT_LOGGER(logger, level, fmt, ...) \
+    if (logger->getLevel() <= level)\
+        BASE::LoggerContentWrap(std::make_shared<BASE::LoggerContent>(BASE::LoggerContent(logger, level, __FILE__,\
+        __LINE__, BASE::getThreadId(), BASE::getFiberId(), time(nullptr), "Mythread"))).getContent()\
+        ->format(fmt, __VA_ARGS__)
+
+#define LOG_FORMAT_DEBUG(logger, fmt, ...)\
+    LOG_FORMAT_LOGGER(logger, BASE::LoggerLevel::DEBUG, fmt, __VA_ARGS__)
+
+#define LOG_FORMAT_INFO(logger, fmt, ...)\
+    LOG_FORMAT_LOGGER(logger, BASE::LoggerLevel::INFO, fmt, __VA_ARGS__)
+
+
+#define LOG_FORMAT_WARN(logger, fmt, ...)\
+    LOG_FORMAT_LOGGER(logger, BASE::LoggerLevel::WARN, fmt, __VA_ARGS__)
+
+#define LOG_FORMAT_ERROR(logger, fmt, ...)\
+    LOG_FORMAT_LOGGER(logger, BASE::LoggerLevel::ERROR, fmt, __VA_ARGS__)
+
+#define LOG_FORMAT_FAIL(logger, fmt, ...)\
+    LOG_FORMAT_LOGGER(logger, BASE::LoggerLevel::FAIL, fmt, __VA_ARGS__)
+
 namespace BASE
 {
+
 
 enum class LoggerLevel  //日志级别
 {
