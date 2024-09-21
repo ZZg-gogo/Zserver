@@ -10,6 +10,7 @@ int main(int argc, char ** argv)
     BASE::Logger::ptr logger(new BASE::Logger()); 
     
     logger->addAppend(BASE::LoggerAppend::ptr(new BASE::StdoutLogAppend()));
+    logger->addAppend(BASE::LoggerAppend::ptr(new BASE::FileLogAppend()));
 
     BASE::LoggerContent::ptr content(new BASE::LoggerContent(logger, BASE::LoggerLevel::INFO, __FILE__,
         __LINE__, BASE::getThreadId(), BASE::getFiberId(), time(nullptr), "Mythread"));
@@ -23,5 +24,10 @@ int main(int argc, char ** argv)
 
     int a = 10;
     LOG_ERROR(logger)<<"你好啊"<<a;
+
+
+    LOG_ERROR(logger)<<BASE::Time::strTime(time(nullptr), "%Y_%m_%d");
+
+    LOG_ERROR(BASE::LoggerMgr::getInstance()->getRoot()) <<"Logger MGR";
     return 0;
 }

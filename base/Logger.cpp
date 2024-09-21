@@ -1,4 +1,5 @@
 #include "Logger.h"
+#include "util.h"
 
 #include <sstream>
 #include <iostream>
@@ -142,14 +143,21 @@ void Logger::fail(LoggerContent::ptr content)
 }
 
 
-FileLogAppend::FileLogAppend(const std::string & filename) : 
+FileLogAppend::FileLogAppend(const std::string & filename) :
+    lastOpenTime_(0),
     filename_(filename)
 {
-
+    reopen();
 }
 
 void FileLogAppend::log(Logger::ptr logger, LoggerLevel level, LoggerContent::ptr content)
 {
+    //已经过了一天了
+    if (lastOpenTime_ +  Time::daySeconds <= content->getTime())    
+    {
+        reopen();
+    }
+    
     filestream_<<format_->format(content);
 }
 
@@ -157,10 +165,22 @@ void FileLogAppend::reopen()
 {
     if (filestream_)
     {
+        time_t curTime = Time::now();
+        lastOpenTime_ = Time::getTodayMidnightTimestamp(curTime);
         filestream_.close();
+        filename_ += Time::strTime(lastOpenTime_, "%Y_%m_%d");
+        filename_ += ".log";
     }
     
-    filestream_.open(filename_);
+    FileUtil::openForWrite(filestream_, filename_, std::ios::app);
+}
+
+FileLogAppend::~FileLogAppend()
+{
+    if (filestream_)
+    {
+        filestream_.close();
+    }
 }
 
 void StdoutLogAppend::log(Logger::ptr logger, LoggerLevel level, LoggerContent::ptr content)
@@ -554,6 +574,27 @@ LoggerContentWrap::LoggerContentWrap(LoggerContent::ptr content) :
 LoggerContentWrap::~LoggerContentWrap()
 {
     content_->getLogger()->log(content_->getLoggerLevel(), content_);
+}
+
+
+LoggerManager::LoggerManager() :
+    root_(new Logger("root"))
+{
+    init();
+    root_->addAppend(LoggerAppend::ptr(new StdoutLogAppend));
+}
+
+//找不到的话 就返回主日志器
+Logger::ptr LoggerManager::getLogger(const std::string& name)
+{
+    auto it = loggers_.find(name);
+
+    return it == loggers_.end()? root_ : it->second;
+}
+
+void LoggerManager::init()
+{
+
 }
 
 }//end namespace

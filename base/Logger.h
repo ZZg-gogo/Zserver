@@ -8,6 +8,9 @@
 #include <vector>
 #include <sstream>
 #include <mutex>
+#include <map>
+
+#include "Singleton.h"
 
 
 #define LOG_STREAM_LOGGER(logger, level)\
@@ -139,6 +142,7 @@ public:
 
 private:
     void init();    //去做用户输入的pattern的解析工作
+
 private:
     std::string pattern_;    //存储用户输入的原始格式
     std::vector<FormatItem::ptr> formats_;  //用户指定了哪些输出格式都解析到这个vector里面
@@ -218,12 +222,35 @@ public:
     typedef std::shared_ptr<FileLogAppend> ptr;
 
 public:
-    FileLogAppend(const std::string & filename);    //输出到哪个文件
+    FileLogAppend(const std::string & filename = "/data/logs/");    //输出到哪个文件
     virtual void log(Logger::ptr logger, LoggerLevel level, LoggerContent::ptr content) override;
     void reopen();  //需要打开文件
+    ~FileLogAppend();
 private:
+    time_t lastOpenTime_;   //上一次打开的时间戳
     std::string filename_;  //文件名
     std::ofstream filestream_;
 };
+
+
+
+class LoggerManager
+{
+public:
+    typedef std::shared_ptr<LoggerManager> ptr;
+
+public:
+    LoggerManager();
+    Logger::ptr getLogger(const std::string& name); //根据日志器的名称去获取logger
+    Logger::ptr getRoot() {return root_;}
+private:
+    void init();
+
+private:
+    Logger::ptr root_;  //主log
+    std::map<std::string, Logger::ptr> loggers_;    //日志器集合
+};
+
+typedef Singleton<LoggerManager> LoggerMgr;
 
 }//end namespace
