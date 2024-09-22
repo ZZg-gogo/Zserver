@@ -1,33 +1,22 @@
 #include <iostream>
 #include <time.h>
+#include <boost/lexical_cast.hpp>
 
 #include "base/Logger.h"
 #include "base/Singleton.h"
 #include "base/util.h"
+#include "base/Config.h"
+
+BASE::ConfigVar<int>::ptr g_int(new BASE::ConfigVar<int>("prot", "listenPort", 8080));
+
+BASE::Config::ptr config;
 
 int main(int argc, char ** argv)
 {
-    BASE::Logger::ptr logger(new BASE::Logger()); 
-    
-    logger->addAppend(BASE::LoggerAppend::ptr(new BASE::StdoutLogAppend()));
-    logger->addAppend(BASE::LoggerAppend::ptr(new BASE::FileLogAppend()));
-
-    BASE::LoggerContent::ptr content(new BASE::LoggerContent(logger, BASE::LoggerLevel::INFO, __FILE__,
-        __LINE__, BASE::getThreadId(), BASE::getFiberId(), time(nullptr), "Mythread"));
-    content->format("Hello World %s", "ZZH");
-    BASE::LoggerContentWrap wrap(content);
-
-    LOG_FORMAT_LOGGER(logger, BASE::LoggerLevel::WARN, "123456 %s", "ZZZ");
-    LOG_FORMAT_INFO(logger, "789 %s", "HHH");
-
-    LOG_STREAM_LOGGER(logger, BASE::LoggerLevel::WARN)<<"我是你*";
-
-    int a = 10;
-    LOG_ERROR(logger)<<"你好啊"<<a;
-
-
-    LOG_ERROR(logger)<<BASE::Time::strTime(time(nullptr), "%Y_%m_%d");
-
-    LOG_ERROR(BASE::LoggerMgr::getInstance()->getRoot()) <<"Logger MGR";
+    LOG_INFO(LOG_ROOT)<<g_int->toString();
+    LOG_INFO(LOG_ROOT)<<g_int->parseFromString(g_int->toString());
+    config->create<BASE::ConfigVar<int>>(g_int);
+    config->create<BASE::ConfigVar<int>>(g_int);
+    config->lookup<BASE::ConfigVar<int>>("port")->toString();
     return 0;
 }

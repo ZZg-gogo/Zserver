@@ -11,6 +11,7 @@
 #include <map>
 
 #include "Singleton.h"
+#include "util.h"
 
 
 #define LOG_STREAM_LOGGER(logger, level)\
@@ -57,6 +58,10 @@
 
 #define LOG_FORMAT_FAIL(logger, fmt, ...)\
     LOG_FORMAT_LOGGER(logger, BASE::LoggerLevel::FAIL, fmt, __VA_ARGS__)
+
+
+#define LOG_ROOT BASE::LoggerMgr::getInstance()->getRoot()
+
 
 namespace BASE
 {
@@ -242,7 +247,7 @@ public:
 public:
     LoggerManager();
     Logger::ptr getLogger(const std::string& name); //根据日志器的名称去获取logger
-    Logger::ptr getRoot() {return root_;}
+    Logger::ptr getRoot() const {return root_;}
 private:
     void init();
 

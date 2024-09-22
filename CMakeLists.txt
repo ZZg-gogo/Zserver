@@ -12,9 +12,15 @@ link_directories(
     /usr/local/lib/
 )
 
+ 
+find_package(Boost 1.53.0 COMPONENTS system filesystem REQUIRED)
+ 
+include_directories(${Boost_INCLUDE_DIRS})
+
 set(base_src
 ../base/Logger.cpp
 ../base/util.cpp
+../base/Config.cpp
 )
 
 set(src
@@ -23,5 +29,5 @@ set(src
 
 
 add_executable(MyServer ${src} ${base_src})
-
+target_link_libraries(MyServer ${Boost_LIBRARIES})
 
