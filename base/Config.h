@@ -5,6 +5,7 @@
 #include <string>
 #include <sstream>
 #include <boost/lexical_cast.hpp>
+#include <yaml-cpp/yaml.h>
 
 #include "Logger.h"
 
@@ -60,7 +61,7 @@ public:
     {
         try
         {
-            boost::lexical_cast<T>(str);
+            val_ = boost::lexical_cast<T>(str);
             return true;
         }
         catch(const std::exception& e)
@@ -86,7 +87,7 @@ public:
     typedef std::map<std::string, ConfigVarBase::ptr> ConfigMap;
 public:
     
-    template<typename T>
+    
     static bool create(ConfigVarBase::ptr config)  //创建一个配置
     {
         auto it = data_.find(config->getName());
@@ -111,6 +112,9 @@ public:
 
         return std::dynamic_pointer_cast<ConfigVar<T>>(it->second);
     }
+
+    static void loadFromYaml(const YAML::Node& node);
+    static ConfigVarBase::ptr getConfigVar(const std::string& name);
 private:
     static ConfigMap data_;
 };

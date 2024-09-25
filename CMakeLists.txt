@@ -4,7 +4,7 @@ project (ZZG_SERVER)
 
 set(CMAKE_C_COMPILER "/opt/rh/devtoolset-9/root/usr/bin/gcc")
 set(CMAKE_CXX_COMPILER "/opt/rh/devtoolset-9/root/usr/bin/g++")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -ggdb -Wall -O0 -Wno-unused-variable -pthread")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -ggdb -Wall -O0 -Wno-unused-variable -pthread -lyaml-cpp")
 
 link_directories(
     ${PROJECT_SOURCE_DIR}/lib
@@ -30,4 +30,6 @@ set(src
 
 add_executable(MyServer ${src} ${base_src})
 target_link_libraries(MyServer ${Boost_LIBRARIES})
+target_link_libraries(MyServer PRIVATE yaml-cpp)
+
 
