@@ -32,7 +32,63 @@ private:
 };
 
 
-template <typename T>
+
+template <typename From, typename To>
+class LexicalCast
+{
+public:
+    To operator()(const From& from)
+    {
+        return boost::lexical_cast<To>(from);
+    }
+};
+
+
+template <typename To>
+class LexicalCast<std::string, std::vector<To>>
+{
+public:
+    std::vector<To> operator()(const std::string& str)
+    {
+        typename std::vector<To> res;
+        YAML::Node node = YAML::Load(str);
+        std::stringstream ss;
+        for (int i = 0; i < node.size(); i++)
+        {
+            ss.str("");
+            ss<<node[i];
+            res.push_back(LexicalCast<std::string, To>()(ss.str())); 
+        }
+        return res;
+    }
+};
+
+template <typename From>
+class LexicalCast<std::vector<From>, std::string>
+{
+public:
+    std::string operator()(const std::vector<From> & vec)
+    {
+        YAML::Node node(YAML::NodeType::Sequence);
+        for (auto& i : vec)
+        {
+            node.push_back(i);
+        }
+        
+        std::stringstream ss;
+        ss<<node;
+        return ss.str();
+    }
+};
+
+
+
+/**
+ * T 类型
+ * ToStr 把T这个类型序列化成字符串
+ * FromStr 把字符串序列化成T
+ */
+template <typename T, typename ToStr = LexicalCast<T, std::string>, typename FromStr = LexicalCast<std::string, T>>
 class ConfigVar : public ConfigVarBase
 {
 public:
@@ -47,7 +103,7 @@ public:
     {
         try
         {
-            return boost::lexical_cast<std::string>(val_);
+            return ToStr()(val_);
         }
         catch(const std::exception& e)
         {
@@ -61,7 +117,7 @@ public:
     {
         try
         {
-            val_ = boost::lexical_cast<T>(str);
+            setVal(FromStr()(str));
             return true;
         }
         catch(const std::exception& e)

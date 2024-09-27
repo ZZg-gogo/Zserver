@@ -12,6 +12,8 @@
 
 BASE::ConfigVar<int>::ptr g_int(new BASE::ConfigVar<int>("system.port", "listenPort", 8080));
 
+BASE::ConfigVar<std::vector<int>>::ptr g_vecInt(new BASE::ConfigVar<std::vector<int>>("vec_int.num", "listenPort", {99,88,77}));
+
 BASE::Config::ptr config;
 
 // 递归函数，用于遍历 YAML 节点
@@ -43,9 +45,19 @@ void printNode(const YAML::Node& node, int indent = 0) {
 
 void test()
 {
+    auto v = g_vecInt->getVal();
+    for (auto & i: v)
+    {
+        LOG_INFO(LOG_ROOT)<<i;
+    }
     YAML::Node node = YAML::LoadFile("./conf/log.yml");
     BASE::Config::loadFromYaml(node);
-
+   
+    v = g_vecInt->getVal();
+    for (auto & i: v)
+    {
+        LOG_INFO(LOG_ROOT)<<i;
+    }
     //printNode(node, 0);
     LOG_INFO(LOG_ROOT)<<g_int->toString();
 }
@@ -54,6 +66,7 @@ int main(int argc, char ** argv)
 {
     LOG_INFO(LOG_ROOT)<<g_int->toString();
     config->create(g_int);
+    config->create(g_vecInt);
     test();
 
     BASE::ConfigVar<int> a{"@port", "端口号", 10};
