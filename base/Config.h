@@ -4,13 +4,18 @@
 #include <memory>
 #include <string>
 #include <sstream>
-#include <boost/lexical_cast.hpp>
-#include <yaml-cpp/yaml.h>
+#include <functional>
 
 #include <list>
 #include <set>
 #include <map>
 #include <unordered_map>
+
+#include <boost/lexical_cast.hpp>
+#include <yaml-cpp/yaml.h>
+
+
+
 
 #include "Logger.h"
 
@@ -31,6 +36,7 @@ public:
 
     virtual std::string toString() = 0; //将对象序列化成字符串
     virtual bool parseFromString(const std::string& str) = 0;  //从字符串反序列化成对象
+    virtual std::string getTypeName() const = 0;
 private:
     std::string name_;  //配置名字
     std::string descript_;  //配置描述
@@ -245,6 +251,8 @@ class ConfigVar : public ConfigVarBase
 {
 public:
     typedef std::shared_ptr<ConfigVar<T>> ptr;
+    //配置更改的回调函数
+    typedef std::function<void(const T&oldValue, const T&newValue)> ChangeCallback;
 public:
     ConfigVar(const std::string& name, const std::string& des, T val):
         ConfigVarBase(name, des),
@@ -281,9 +289,45 @@ public:
     }
 
     const T getVal() const {return val_;}
-    void setVal(T val) {val_ = val;}
+    void setVal(const T& v) 
+    {
+        if (v == val_)
+        {
+            return ;
+        }
+
+        for (auto &i : callbacks_)
+        {
+            i.second(val_, v);
+        }
+        
+        
+        val_ = v;
+    }
+
+    virtual std::string getTypeName() const override
+    {
+        return typeid(T).name();
+    }
+
+    void addCallback(uint64_t id, ChangeCallback cb)    //注册配置更改的回调函数
+    {
+        callbacks_[id] = cb;
+    }
+
+    void delCallback(uint64_t id)
+    {
+        callbacks_.erase(id);
+    }
+
+    ChangeCallback getCallback(uint64_t id)
+    {
+        auto it = callbacks_.find(it);
+        return it == callbacks_.end() ? nullptr : it.second;
+    }
 private:
     T val_;
+    std::map<uint64_t, ChangeCallback> callbacks_;
 };
 
 

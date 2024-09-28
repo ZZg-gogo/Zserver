@@ -74,6 +74,10 @@ void test()
     {
         LOG_INFO(LOG_ROOT)<<i.first<<"---"<<i.second;\
     }
+
+    g_int->addCallback(1, [](const int &old, const int &newValue){
+        LOG_INFO(LOG_ROOT)<<"addCallback"<<old<<"---"<<newValue;
+    });
     
     YAML::Node node = YAML::LoadFile("./conf/log.yml");
     BASE::Config::loadFromYaml(node);
