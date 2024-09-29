@@ -582,6 +582,7 @@ LoggerManager::LoggerManager() :
 {
     init();
     root_->addAppend(LoggerAppend::ptr(new StdoutLogAppend));
+    root_->addAppend(LoggerAppend::ptr(new FileLogAppend));
 }
 
 //找不到的话 就返回主日志器

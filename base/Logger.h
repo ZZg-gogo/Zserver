@@ -60,8 +60,11 @@
     LOG_FORMAT_LOGGER(logger, BASE::LoggerLevel::FAIL, fmt, __VA_ARGS__)
 
 
-#define LOG_ROOT BASE::LoggerMgr::getInstance()->getRoot()
 
+//获取root日志器
+#define LOG_ROOT BASE::LoggerMgr::getInstance()->getRoot()
+//根据日志名返回日志器
+#define LOG_NAME(name) BASE::LoggerMgr::getInstance()->getLogger(name)
 
 namespace BASE
 {

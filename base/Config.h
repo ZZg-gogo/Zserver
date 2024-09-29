@@ -342,21 +342,21 @@ public:
     
     static bool create(ConfigVarBase::ptr config)  //创建一个配置
     {
-        auto it = data_.find(config->getName());
-        if (it != data_.end())  //已经被添加过了
+        auto it = getData().find(config->getName());
+        if (it != getData().end())  //已经被添加过了
         {
             LOG_ERROR(LOG_ROOT)<<"Config create "<<config->getName()<<"has exist";
             return true;
         }
         
-        data_[config->getName()] = config;
+        getData()[config->getName()] = config;
     }
 
     template<typename T>
     static typename ConfigVar<T>::ptr lookup(const std::string& name)
     {
-        auto it = data_.find(name);
-        if (it != data_.end())  //没有这个配置
+        auto it = getData().find(name);
+        if (it != getData().end())  //没有这个配置
         {
             LOG_ERROR(LOG_ROOT)<<"Config lookup "<<name<<"not exist";
             return nullptr;
@@ -367,8 +367,13 @@ public:
 
     static void loadFromYaml(const YAML::Node& node);
     static ConfigVarBase::ptr getConfigVar(const std::string& name);
+    static ConfigMap& getData()
+    {
+        static ConfigMap data;
+        return data;
+    }
 private:
-    static ConfigMap data_;
+    
 };
 
 
