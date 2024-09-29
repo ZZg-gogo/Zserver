@@ -24,7 +24,6 @@ ConfigVarBase::ConfigVarBase(const std::string& name, const std::string& des) :
 }
 
 
-Config::ConfigMap Config::data_;
 
 static void listAllYamlMembers(const std::string& prefix, 
                                const YAML::Node& node,
@@ -85,8 +84,8 @@ void Config::loadFromYaml(const YAML::Node& node)
 
 ConfigVarBase::ptr Config::getConfigVar(const std::string& name)
 {
-    auto it = data_.find(name);
-    return data_.end() == it ? nullptr : it->second;
+    auto it = getData().find(name);
+    return getData().end() == it ? nullptr : it->second;
 }
 
 
