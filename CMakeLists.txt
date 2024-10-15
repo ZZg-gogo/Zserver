@@ -21,6 +21,7 @@ set(base_src
 ../base/Logger.cpp
 ../base/util.cpp
 ../base/Config.cpp
+../base/Thread.cpp
 )
 
 set(src
