@@ -23,13 +23,16 @@ public:
 
     void join();
     pid_t getId() const {return threadPid_;}
+    std::string& getName() {return threadName_;}
 
-    static ptr getCurThread();  //获取当前的线程
-    static std::string& getName();  //获取当前的线程名
+    static Thread* getCurThread();  //获取当前的线程
+    static std::string& GetName();  //获取当前的线程名
+
+    static void * run(void * arg);  //传递给POSIX线程参数
 private:
     pid_t threadPid_;    //线程id
     pthread_t thread_;  //线程id
-    //std::string threadName_;    //线程名 用thread_local
+    std::string threadName_;    //线程名 用thread_local
     ThreadCallback threadFun_;  //线程函数
 };
 
