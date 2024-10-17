@@ -22,6 +22,7 @@ set(base_src
 ../base/util.cpp
 ../base/Config.cpp
 ../base/Thread.cpp
+../base/Lock.cpp
 )
 
 set(src

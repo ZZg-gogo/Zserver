@@ -11,12 +11,20 @@
 #include "base/util.h"
 #include "base/Config.h"
 #include "base/Thread.h"
+#include "base/Lock.h"
 
+
+int count = 0;
+BASE::RWmutex mutex;
 
 void fun()
 {
-    std::cout<<"666666666"<<std::endl;
-    sleep(20);
+    for (int i = 0; i < 1000000; i++)
+    {
+        BASE::RWmutex::rLock lock(mutex);
+        ++count;
+    }
+    
 }
 
 int main(int argc, char ** argv)
@@ -32,5 +40,6 @@ int main(int argc, char ** argv)
         threads[i]->join();
     }
 
+    std::cout<<count<<std::endl;
     return 0;
 }
