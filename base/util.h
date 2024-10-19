@@ -5,12 +5,18 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <fstream>
+#include <vector>
 
 namespace BASE
 {
 
 pid_t getThreadId();    //获取线程id
 u_int32_t getFiberId(); //获取携程id
+
+//获取堆栈信息放到v中 size是获取多少层 skip要跳过多少层
+void Backtrace(std::vector<std::string> & v, int size, int skip);
+
+std::string Backtrace(int size, int skip);    //直接返回一个堆栈信息的字符串
 
 
 class Time
