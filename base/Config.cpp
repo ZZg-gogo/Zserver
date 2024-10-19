@@ -24,7 +24,6 @@ ConfigVarBase::ConfigVarBase(const std::string& name, const std::string& des) :
 }
 
 
-
 static void listAllYamlMembers(const std::string& prefix, 
                                const YAML::Node& node,
                                std::list<std::pair<std::string, const YAML::Node>>& output)
@@ -48,8 +47,11 @@ static void listAllYamlMembers(const std::string& prefix,
     
 }
 
+
+
 void Config::loadFromYaml(const YAML::Node& node)
 {
+
     std::list<std::pair<std::string, const YAML::Node>> allNodes;
     listAllYamlMembers("", node, allNodes);
 
@@ -84,6 +86,7 @@ void Config::loadFromYaml(const YAML::Node& node)
 
 ConfigVarBase::ptr Config::getConfigVar(const std::string& name)
 {
+    RWmutex::rLock lock(getMutex());
     auto it = getData().find(name);
     return getData().end() == it ? nullptr : it->second;
 }

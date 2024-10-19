@@ -19,6 +19,7 @@
 
 #include "Logger.h"
 
+
 namespace BASE
 {
 
@@ -263,6 +264,7 @@ public:
     {
         try
         {
+            RWmutex::rLock lock(mutex_);
             return ToStr()(val_);
         }
         catch(const std::exception& e)
@@ -288,9 +290,14 @@ public:
         return false;
     }
 
-    const T getVal() const {return val_;}
+    const T getVal() 
+    {
+        RWmutex::rLock lock(mutex_);
+        return val_;
+    }
     void setVal(const T& v) 
     {
+        RWmutex::wLock lock(mutex_);
         if (v == val_)
         {
             return ;
@@ -310,24 +317,31 @@ public:
         return typeid(T).name();
     }
 
-    void addCallback(uint64_t id, ChangeCallback cb)    //注册配置更改的回调函数
+    uint64_t addCallback(ChangeCallback cb)    //注册配置更改的回调函数
     {
+        RWmutex::wLock lock(mutex_);
+        static uint64_t id = 0;
+        ++id;
         callbacks_[id] = cb;
+        return id;
     }
 
     void delCallback(uint64_t id)
     {
+        RWmutex::wLock lock(mutex_);
         callbacks_.erase(id);
     }
 
     ChangeCallback getCallback(uint64_t id)
     {
+        RWmutex::rLock lock(mutex_);
         auto it = callbacks_.find(it);
         return it == callbacks_.end() ? nullptr : it.second;
     }
 private:
     T val_;
     std::map<uint64_t, ChangeCallback> callbacks_;
+    RWmutex mutex_;
 };
 
 
@@ -339,9 +353,9 @@ public:
     typedef std::map<std::string, ConfigVarBase::ptr> ConfigMap;
 public:
     
-    
     static bool create(ConfigVarBase::ptr config)  //创建一个配置
     {
+        RWmutex::wLock lock(getMutex());
         auto it = getData().find(config->getName());
         if (it != getData().end())  //已经被添加过了
         {
@@ -355,6 +369,7 @@ public:
     template<typename T>
     static typename ConfigVar<T>::ptr lookup(const std::string& name)
     {
+        RWmutex::rLock lock(getMutex());
         auto it = getData().find(name);
         if (it != getData().end())  //没有这个配置
         {
@@ -367,12 +382,19 @@ public:
 
     static void loadFromYaml(const YAML::Node& node);
     static ConfigVarBase::ptr getConfigVar(const std::string& name);
+
+private:
     static ConfigMap& getData()
     {
         static ConfigMap data;
         return data;
     }
-private:
+
+    static RWmutex& getMutex() //静态成员的初始化顺序问题
+    {
+        static RWmutex mutex_;
+        return mutex_;
+    }
     
 };
 
