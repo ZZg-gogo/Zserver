@@ -12,6 +12,7 @@
 
 #include "Singleton.h"
 #include "util.h"
+#include "Lock.h"
 
 
 #define LOG_STREAM_LOGGER(logger, level)\
@@ -166,10 +167,11 @@ public:
     virtual void log(std::shared_ptr<Logger> logger, LoggerLevel level, LoggerContent::ptr content) = 0;
     virtual ~LoggerAppend() {}
     //设置日志的输出格式
-    void setFormat(LoggerFormat::ptr format) {format_ = format;}
-    LoggerFormat::ptr getFormat() {return format_;}
+    void setFormat(LoggerFormat::ptr format);
+    LoggerFormat::ptr getFormat();
 protected:
     LoggerFormat::ptr format_;
+    Mutex mutex_;
 };
 
 
@@ -207,8 +209,8 @@ private:
     std::string name_;
     LoggerLevel level_; //日志级别 日志级别大于level_才会被输出
     std::list<LoggerAppend::ptr> appenders_;    //输出的目的地集合 日志可以被输出到多个地方
-    std::mutex mutex_;  //互斥锁
     LoggerFormat::ptr formater_;    //日志格式器
+    Mutex mutex_;
      
 };
 
@@ -257,6 +259,7 @@ private:
 private:
     Logger::ptr root_;  //主log
     std::map<std::string, Logger::ptr> loggers_;    //日志器集合
+    Mutex mutex_;
 };
 
 typedef Singleton<LoggerManager> LoggerMgr;

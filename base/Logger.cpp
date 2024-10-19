@@ -68,6 +68,7 @@ Logger::Logger(const std::string &name) :
 
 void Logger::addAppend(LoggerAppend::ptr append)
 {
+    Mutex::Lock lock(mutex_);
     if (!append->getFormat())
     {
         append->setFormat(formater_);
@@ -78,6 +79,7 @@ void Logger::addAppend(LoggerAppend::ptr append)
 
 void Logger::delAppend(LoggerAppend::ptr append)
 {
+    Mutex::Lock lock(mutex_);
     for (auto it = appenders_.begin(); appenders_.end() != it; ++it)
     {
         if (*it == append)
@@ -95,6 +97,7 @@ void Logger::log(LoggerLevel level, LoggerContent::ptr content)
         return;
     }
     
+    Mutex::Lock lock(mutex_);
     for (auto it = appenders_.begin(); appenders_.end() != it; ++it)
     {
         (*it)->log(shared_from_this(), level, content);
@@ -104,6 +107,7 @@ void Logger::log(LoggerLevel level, LoggerContent::ptr content)
 
 void Logger::setFormatter(const std::string& val)
 {
+    Mutex::Lock lock(mutex_);
     formater_.reset(new LoggerFormat(val));
     for (auto it = appenders_.begin(); appenders_.end() != it; ++it)
     {
@@ -112,11 +116,18 @@ void Logger::setFormatter(const std::string& val)
 }
 void Logger::setFormatter(LoggerFormat::ptr formater)
 {
+    Mutex::Lock lock(mutex_);
     formater_ = formater;
     for (auto it = appenders_.begin(); appenders_.end() != it; ++it)
     {
         (*it)->setFormat(formater_);
     }
+}
+
+LoggerFormat::ptr Logger::getFormatter()
+{
+    Mutex::Lock lock(mutex_);
+    return formater_;
 }
 
 
@@ -143,6 +154,19 @@ void Logger::fail(LoggerContent::ptr content)
 }
 
 
+void LoggerAppend::setFormat(LoggerFormat::ptr format) 
+{
+    Mutex::Lock lock(mutex_);
+    format_ = format;
+}
+
+LoggerFormat::ptr LoggerAppend::getFormat() 
+{
+    Mutex::Lock lock(mutex_);
+    return format_;
+}
+
+
 FileLogAppend::FileLogAppend(const std::string & filename) :
     lastOpenTime_(0),
     filename_(filename)
@@ -152,6 +176,7 @@ FileLogAppend::FileLogAppend(const std::string & filename) :
 
 void FileLogAppend::log(Logger::ptr logger, LoggerLevel level, LoggerContent::ptr content)
 {
+    Mutex::Lock lock(mutex_);
     //已经过了一天了
     if (lastOpenTime_ +  Time::daySeconds <= content->getTime())    
     {
@@ -185,6 +210,7 @@ FileLogAppend::~FileLogAppend()
 
 void StdoutLogAppend::log(Logger::ptr logger, LoggerLevel level, LoggerContent::ptr content)
 {
+    Mutex::Lock lock(mutex_);
     std::cout<<format_->format(content);
 }
 
@@ -588,6 +614,7 @@ LoggerManager::LoggerManager() :
 //找不到的话 就返回主日志器
 Logger::ptr LoggerManager::getLogger(const std::string& name)
 {
+    Mutex::Lock lock(mutex_);
     auto it = loggers_.find(name);
 
     return it == loggers_.end()? root_ : it->second;

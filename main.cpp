@@ -29,6 +29,7 @@ void fun()
 
 int main(int argc, char ** argv)
 {
+    LOG_INFO(LOG_ROOT)<<"ZZG Server Start";
     std::vector<BASE::Thread::ptr> threads;
     for (int i = 0; i < 5; i++)
     {
@@ -41,5 +42,7 @@ int main(int argc, char ** argv)
     }
 
     std::cout<<count<<std::endl;
+
+    LOG_INFO(LOG_ROOT)<<"ZZG Server Quit";
     return 0;
 }

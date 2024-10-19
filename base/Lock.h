@@ -40,9 +40,62 @@ private:
     T& mutex_;
 };
 
-class Mutex
-{
 
+class SpinLock : NoCopyable  
+{
+public:
+    typedef ScopedLock<SpinLock> Lock;
+public:
+    SpinLock()
+    {
+        pthread_spin_init(&mutex_, 0);
+    }
+
+    ~SpinLock()
+    {
+        pthread_spin_destroy(&mutex_);
+    }
+
+    void lock()
+    {
+        pthread_spin_lock(&mutex_);
+    }
+
+    void unlock()
+    {
+        pthread_spin_unlock(&mutex_);
+    }
+private:
+    pthread_spinlock_t mutex_;
+};
+
+
+class Mutex : NoCopyable
+{
+public:
+    typedef ScopedLock<Mutex> Lock;
+public:
+    Mutex()
+    {
+        pthread_mutex_init(&mutex_, nullptr);
+    }
+
+    ~Mutex()
+    {
+        pthread_mutex_destroy(&mutex_);
+    }
+
+    void lock()
+    {
+        pthread_mutex_lock(&mutex_);
+    }
+
+    void unlock()
+    {
+        pthread_mutex_unlock(&mutex_);
+    }
+private:
+    pthread_mutex_t mutex_;
 };
 
 template <typename T>
