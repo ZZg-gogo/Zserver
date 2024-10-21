@@ -14,7 +14,7 @@
 #include "../base/Config.h"
 #include "../base/Thread.h"
 #include "../base/Lock.h"
-
+#include "../base/macro.h"
 
 void testAssert()
 {
@@ -30,9 +30,18 @@ void testAssert()
     assert(0);
 }
 
+
+
+void testAssert1()
+{
+    ZZG_ASSERT(false);
+}
+
+
 int main(int argc, char ** argv)
 {
-    testAssert();
+    //testAssert();
+    testAssert1();
     std::cout<<"test util"<<std::endl;
     return 0;
 }
