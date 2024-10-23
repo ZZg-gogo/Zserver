@@ -23,6 +23,7 @@ set(base_src
 ../base/Config.cpp
 ../base/Thread.cpp
 ../base/Lock.cpp
+../base/Fiber.cpp
 )
 
 set(src
@@ -31,7 +32,6 @@ set(src
 
 
 set(test_util_src
-../test/testUtil.cpp
 )
 
 
@@ -39,8 +39,9 @@ add_executable(MyServer ${src} ${base_src})
 target_link_libraries(MyServer ${Boost_LIBRARIES})
 target_link_libraries(MyServer PRIVATE yaml-cpp)
 
-add_executable(TestUtil ${test_util_src} ${base_src})
+add_executable(TestUtil ../test/testUtil.cpp ${base_src})
 target_link_libraries(TestUtil ${Boost_LIBRARIES})
 target_link_libraries(TestUtil PRIVATE yaml-cpp)
 
 
+add_executable(TestContext ../test/testUcontext.cpp ${test_util_src} )
