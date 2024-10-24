@@ -63,7 +63,7 @@ void Config::loadFromYaml(const YAML::Node& node)
             continue;
         }
         
-        
+        std::transform(it->first.begin(), it->first.end(), it->first.begin(), ::tolower);
         ConfigVarBase::ptr var = getConfigVar(it->first);
         if (var)
         {
