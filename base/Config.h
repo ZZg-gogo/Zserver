@@ -23,6 +23,7 @@
 namespace BASE
 {
 
+
 class ConfigVarBase    //配置变量的基类
 {
 public:
@@ -242,12 +243,72 @@ public:
     }
 };
 
+
+template <typename T, typename ToStr = LexicalCast<T, std::string>, typename FromStr = LexicalCast<std::string, T>>
+class ConfigVar;
+
+class Config
+{
+public:
+    typedef std::shared_ptr<Config> ptr;
+    typedef std::map<std::string, ConfigVarBase::ptr> ConfigMap;
+public:
+    
+    static bool create(ConfigVarBase::ptr config)  //创建一个配置
+    {
+        RWmutex::wLock lock(getMutex());
+        auto it = getData().find(config->getName());
+        if (it != getData().end())  //已经被添加过了
+        {
+            LOG_ERROR(LOG_ROOT)<<"Config create "<<config->getName()<<"has exist";
+            return true;
+        }
+        
+        LOG_ERROR(LOG_ROOT)<<"Config create "<<config->getName()<<" add success";
+        getData()[config->getName()] = config;
+    }
+
+    template<typename T>
+    static typename ConfigVar<T>::ptr lookup(const std::string& name)
+    {
+        std::string tmpName = name;
+        std::transform(tmpName.begin(), tmpName.end(), tmpName.begin(), ::tolower);
+        RWmutex::rLock lock(getMutex());
+        auto it = getData().find(tmpName);
+        if (it == getData().end())  //没有这个配置
+        {
+            LOG_ERROR(LOG_ROOT)<<"Config lookup "<<name<<"not exist";
+            return nullptr;
+        }
+
+        return std::dynamic_pointer_cast<ConfigVar<T>>(it->second);
+    }
+
+    static void loadFromYaml(const YAML::Node& node);
+    static ConfigVarBase::ptr getConfigVar(const std::string& name);
+
+private:
+    static ConfigMap& getData()
+    {
+        static ConfigMap data;
+        return data;
+    }
+
+    static RWmutex& getMutex() //静态成员的初始化顺序问题
+    {
+        static RWmutex mutex_;
+        return mutex_;
+    }
+    
+};
+
+
 /**
  * T 类型
  * ToStr 把T这个类型序列化成字符串
  * FromStr 把字符串序列化成T
  */
-template <typename T, typename ToStr = LexicalCast<T, std::string>, typename FromStr = LexicalCast<std::string, T>>
+template <typename T, typename ToStr, typename FromStr>
 class ConfigVar : public ConfigVarBase
 {
 public:
@@ -255,10 +316,14 @@ public:
     //配置更改的回调函数
     typedef std::function<void(const T&oldValue, const T&newValue)> ChangeCallback;
 public:
-    ConfigVar(const std::string& name, const std::string& des, T val):
-        ConfigVarBase(name, des),
-        val_(val)
-    {}
+    static ptr Create(const std::string& name, const std::string& des, T val) 
+    {
+        ptr instance(new ConfigVar<T>(name, des, val));
+        Config::create(instance);
+        return instance;
+    }
+
+
 
     virtual std::string toString() override //将对象序列化成字符串
     {
@@ -338,6 +403,14 @@ public:
         auto it = callbacks_.find(it);
         return it == callbacks_.end() ? nullptr : it.second;
     }
+
+//protected:
+    ConfigVar(const std::string& name, const std::string& des, T val):
+        ConfigVarBase(name, des),
+        val_(val)
+    {
+    }
+
 private:
     T val_;
     std::map<uint64_t, ChangeCallback> callbacks_;
@@ -346,57 +419,7 @@ private:
 
 
 
-class Config
-{
-public:
-    typedef std::shared_ptr<Config> ptr;
-    typedef std::map<std::string, ConfigVarBase::ptr> ConfigMap;
-public:
-    
-    static bool create(ConfigVarBase::ptr config)  //创建一个配置
-    {
-        RWmutex::wLock lock(getMutex());
-        auto it = getData().find(config->getName());
-        if (it != getData().end())  //已经被添加过了
-        {
-            LOG_ERROR(LOG_ROOT)<<"Config create "<<config->getName()<<"has exist";
-            return true;
-        }
-        
-        getData()[config->getName()] = config;
-    }
 
-    template<typename T>
-    static typename ConfigVar<T>::ptr lookup(const std::string& name)
-    {
-        RWmutex::rLock lock(getMutex());
-        auto it = getData().find(name);
-        if (it != getData().end())  //没有这个配置
-        {
-            LOG_ERROR(LOG_ROOT)<<"Config lookup "<<name<<"not exist";
-            return nullptr;
-        }
-
-        return std::dynamic_pointer_cast<ConfigVar<T>>(it->second);
-    }
-
-    static void loadFromYaml(const YAML::Node& node);
-    static ConfigVarBase::ptr getConfigVar(const std::string& name);
-
-private:
-    static ConfigMap& getData()
-    {
-        static ConfigMap data;
-        return data;
-    }
-
-    static RWmutex& getMutex() //静态成员的初始化顺序问题
-    {
-        static RWmutex mutex_;
-        return mutex_;
-    }
-    
-};
 
 
 
