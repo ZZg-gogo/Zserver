@@ -247,6 +247,7 @@ public:
 template <typename T, typename ToStr = LexicalCast<T, std::string>, typename FromStr = LexicalCast<std::string, T>>
 class ConfigVar;
 
+//TODO:新增一个读取目录下面全部配置的方法
 class Config
 {
 public:

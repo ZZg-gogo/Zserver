@@ -23,10 +23,11 @@ public:
         INIT,       //初始化
         READY,      //就绪
         RUNNING,    //运行
-        SUSPENDED   //挂起
+        SUSPENDED,  //挂起
+        TERM        //结束
     };
 public:
-    Fiber(FiberFun fun, size_t stackSize);
+    Fiber(FiberFun fun, size_t stackSize = 0);//子协程的构造函数
     ~Fiber();
 
     //重置协程的执行函数
@@ -36,11 +37,15 @@ public:
     void yield();   //当前协程让出执行权
 
 
+private:
+    Fiber();    //主协程的构造函数
 
 
 public:
+    //设置当前线程的运行协程
+    static void SetCurFiber(Fiber *);
     //获得当前运行的协程
-    static Fiber::ptr getCurFiber();
+    static Fiber::ptr GetCurFiber();
     //协程切换到后台 并且设置为READY
     static void YieldToReady();
     //协程切换到后台 并且设置为SUSPENDED
@@ -64,7 +69,7 @@ private:
     size_t stackSize_;                  //栈大小
     State state_;                       //当前状态
     ucontext_t ucontext_;               //运行上下文
-    char * stackPoint_;                 //指向栈空间
+    void * stackPoint_;                 //指向栈空间
     FiberFun cb_;                       //协程函数
 private:
     static std::atomic_int64_t FibersCount;        //统计当前协程的数量
