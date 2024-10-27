@@ -63,6 +63,15 @@ void Fiber::YieldToSuspended()
     cur->yield();
 }
 
+//协程切换到后台 并且设置为结束
+void Fiber::YieldToTerm()
+{
+    Fiber::ptr cur = GetCurFiber(); //得到当前的协程
+    ZZG_ASSERT(cur.get() != MainFiber.get())
+    cur->state_ = State::TERM;
+    cur->yield();
+}
+
 void Fiber::MainFun()
 {
     Fiber::ptr cur = GetCurFiber(); //得到当前的协程
@@ -84,7 +93,7 @@ void Fiber::MainFun()
         LOG_ERROR(LOG_ROOT) << "Something error in Fiber id="<<cur->fiberId_;
     }
     
-    
+    //YieldToTerm();
 }
 
 //每个线程的主协程直接就是运行状态
@@ -137,7 +146,7 @@ Fiber::Fiber(FiberFun fun, size_t stackSize) :
     ucontext_.uc_flags = 0;
     ucontext_.uc_stack.ss_size = stackSize_;
     ucontext_.uc_stack.ss_sp = stackPoint_;
-    ucontext_.uc_link = nullptr;
+    ucontext_.uc_link = &MainFiber->ucontext_;
 
     makecontext(&ucontext_, MainFun, 0);
 

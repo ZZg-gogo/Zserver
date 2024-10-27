@@ -10,6 +10,7 @@
 #include <mutex>
 #include <map>
 
+#include "Thread.h"
 #include "Singleton.h"
 #include "util.h"
 #include "Lock.h"
@@ -18,7 +19,7 @@
 #define LOG_STREAM_LOGGER(logger, level)\
     if (logger->getLevel() <= level)\
         BASE::LoggerContentWrap(std::make_shared<BASE::LoggerContent>(BASE::LoggerContent(logger, level, __FILE__,\
-        __LINE__, BASE::getThreadId(), BASE::getFiberId(), time(nullptr), "Mythread"))).getSS()
+        __LINE__, BASE::getThreadId(), BASE::getFiberId(), time(nullptr), BASE::Thread::GetName()))).getSS()
 
 #define LOG_DEBUG(logger)\
     LOG_STREAM_LOGGER(logger, BASE::LoggerLevel::DEBUG)

@@ -6,7 +6,7 @@ namespace BASE
 {
 
 static thread_local Thread* ThreadPtr = nullptr;
-static thread_local std::string ThreadName = "UNKONW";
+static thread_local std::string ThreadName = "MainThread";
 
 Thread* Thread::getCurThread() //获取当前的线程
 {

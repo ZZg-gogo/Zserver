@@ -50,6 +50,8 @@ public:
     static void YieldToReady();
     //协程切换到后台 并且设置为SUSPENDED
     static void YieldToSuspended();
+    //协程切换到后台 并且设置为结束
+    static void YieldToTerm();
     //ucontext协程函数
     static void MainFun();
 
