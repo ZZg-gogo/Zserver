@@ -35,6 +35,15 @@ Fiber::ptr Fiber::GetCurFiber()
     return CurFiber->shared_from_this();
 }
 
+uint64_t Fiber::getCurFiberId()
+{
+    if (CurFiber)
+    {
+        return CurFiber->fiberId_;
+    }
+    
+}
+
 //协程切换到后台 并且设置为READY
 void Fiber::YieldToReady()
 {

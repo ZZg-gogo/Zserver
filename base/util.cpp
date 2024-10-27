@@ -4,6 +4,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include "Logger.h"
+#include "Fiber.h"
 
 namespace BASE
 {
@@ -13,9 +14,9 @@ pid_t getThreadId()   //获取线程id
     return syscall(SYS_gettid);
 }
 
-u_int32_t getFiberId()  //获取携程id
+uint64_t getFiberId()  //获取携程id
 {
-    return 0;
+    return Fiber::getCurFiberId();
 }
 
 

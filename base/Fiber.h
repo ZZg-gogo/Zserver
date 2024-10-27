@@ -37,7 +37,6 @@ public:
     void resume();  //切换到当前协程执行
     void yield();   //当前协程让出执行权
 
-
 private:
     Fiber();    //主协程的构造函数
 
@@ -65,6 +64,7 @@ public:
         return ++FiberId;
     }
 
+    static uint64_t getCurFiberId();
 private:
     uint64_t fiberId_;                  //协程id
     size_t stackSize_;                  //栈大小
