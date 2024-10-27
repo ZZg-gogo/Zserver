@@ -18,13 +18,14 @@ public:
     typedef std::shared_ptr<Fiber> ptr;
     typedef std::function<void()> FiberFun;
 
-    enum State
+    enum class State
     {
         INIT,       //初始化
         READY,      //就绪
         RUNNING,    //运行
         SUSPENDED,  //挂起
-        TERM        //结束
+        TERM,       //结束
+        ERROR       //异常了
     };
 public:
     Fiber(FiberFun fun, size_t stackSize = 0);//子协程的构造函数

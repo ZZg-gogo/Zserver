@@ -35,12 +35,50 @@ Fiber::ptr Fiber::GetCurFiber()
     return CurFiber->shared_from_this();
 }
 
+//协程切换到后台 并且设置为READY
+void Fiber::YieldToReady()
+{
+    Fiber::ptr cur = GetCurFiber(); //得到当前的协程
+    ZZG_ASSERT(cur.get() != MainFiber.get())
+    cur->state_ = State::READY;
+    cur->yield();
+}
+
+
+//协程切换到后台 并且设置为SUSPENDED
+void Fiber::YieldToSuspended()
+{
+    Fiber::ptr cur = GetCurFiber(); //得到当前的协程
+    ZZG_ASSERT(cur.get() != MainFiber.get())
+    cur->state_ = State::SUSPENDED;
+    cur->yield();
+}
 
 void Fiber::MainFun()
 {
+    Fiber::ptr cur = GetCurFiber(); //得到当前的协程
+    ZZG_ASSERT(cur && cur->state_ == State::RUNNING)
+    try
+    {
+        cur->cb_();
+        cur->cb_ = nullptr;
+        cur->state_ = State::TERM;
+    }
+    catch(const std::exception& e)
+    {
+        cur->state_ = State::ERROR;
+        LOG_ERROR(LOG_ROOT) << e.what();
+    }
+    catch(...)
+    {
+        cur->state_ = State::ERROR;
+        LOG_ERROR(LOG_ROOT) << "Something error in Fiber id="<<cur->fiberId_;
+    }
+    
     
 }
 
+//每个线程的主协程直接就是运行状态
 Fiber::Fiber() : 
     fiberId_(nextFiberId()),    
     stackSize_(0),
@@ -92,6 +130,8 @@ Fiber::Fiber(FiberFun fun, size_t stackSize) :
     ucontext_.uc_stack.ss_sp = stackPoint_;
     ucontext_.uc_link = nullptr;
 
+    makecontext(&ucontext_, MainFun, 0);
+
     LOG_INFO(LOG_ROOT)<<"New Fiber Create Succ Fiber Id = "<<fiberId_<<" stackSize = "<<stackSize_;
 }
 
@@ -102,7 +142,7 @@ Fiber::~Fiber()
     LOG_INFO(LOG_ROOT)<<"New Fiber destroy  Fiber Id = "<<fiberId_;
     if (stackPoint_)//子协程
     {
-        ZZG_ASSERT(state_ == State::INIT || state_ == State::TERM)
+        ZZG_ASSERT(state_ == State::INIT || state_ == State::TERM || state_ == State::ERROR)
         delete []stackPoint_;
         stackPoint_ = nullptr;
     }
@@ -116,8 +156,8 @@ Fiber::~Fiber()
 void Fiber::reset(FiberFun fun)
 {
     //必须有栈 必须处在初始化或者结束状态
-    ZZG_ASSERT(stackPoint_) 
-    ZZG_ASSERT(state_ == State::INIT || state_ == State::TERM)
+    ZZG_ASSERT(stackPoint_)
+    ZZG_ASSERT(state_ == State::INIT || state_ == State::TERM || state_ == State::ERROR)
     cb_ = fun;
 
     if (getcontext(&ucontext_))
@@ -134,5 +174,33 @@ void Fiber::reset(FiberFun fun)
     makecontext(&ucontext_, MainFun, 0);
     state_ = State::INIT;
 }
+
+//切换到当前协程执行
+void Fiber::resume()
+{
+    SetCurFiber(this);
+    ZZG_ASSERT(state_ != State::RUNNING)
+    state_ = State::RUNNING;
+    if (swapcontext(&(MainFiber->ucontext_), &ucontext_))
+    {
+       LOG_ERROR(LOG_ROOT)<<"Fiber resume Error Reason = swapcontext";
+       return;
+    }
+}
+
+//当前协程让出执行权
+
+void Fiber::yield()
+{
+    SetCurFiber(MainFiber.get());
+    if (swapcontext(&ucontext_, &MainFiber->ucontext_))
+    {
+       LOG_ERROR(LOG_ROOT)<<"Fiber yield Error Reason = swapcontext";
+       return;
+    }
+
+}
+
+
 
 }//end namespace
