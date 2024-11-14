@@ -24,6 +24,7 @@ set(base_src
 ../base/Thread.cpp
 ../base/Lock.cpp
 ../base/Fiber.cpp
+../base/Scheduler.cpp
 )
 
 set(src
