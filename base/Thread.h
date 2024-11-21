@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <functional>
+#include "Lock.h"
 #include "NoCopyable.h"
 
 
@@ -34,6 +35,7 @@ private:
     pthread_t thread_;  //线程id
     std::string threadName_;    //线程名 用thread_local
     ThreadCallback threadFun_;  //线程函数
+    Semaphore sem_;     //信号量
 };
 
 

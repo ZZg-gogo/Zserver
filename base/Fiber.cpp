@@ -84,11 +84,13 @@ void Fiber::MainFun()
     }
     catch(const std::exception& e)
     {
+        cur->cb_ = nullptr;
         cur->state_ = State::ERROR;
         LOG_ERROR(LOG_ROOT) << e.what();
     }
     catch(...)
     {
+        cur->cb_ = nullptr;
         cur->state_ = State::ERROR;
         LOG_ERROR(LOG_ROOT) << "Something error in Fiber id="<<cur->fiberId_;
     }

@@ -27,6 +27,7 @@ void * Thread::run(void * arg)
     ThreadName = thread->getName();
 
     thread->threadPid_ = getThreadId();
+    thread->sem_.notify();
     pthread_setname_np(thread->thread_, ThreadName.c_str());
 
     std::function<void()> cb;
@@ -48,6 +49,8 @@ Thread::Thread(ThreadCallback cb, const std::string& name) :
         LOG_INFO(LOG_ROOT)<<"pthread_create error name = "<<name;
         throw std::logic_error("pthread_create");
     }
+
+    sem_.wait();
     
 }
 

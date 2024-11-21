@@ -37,6 +37,17 @@ public:
     void resume();  //切换到当前协程执行
     void yield();   //当前协程让出执行权
 
+    //返回当前协程的状态
+    State getState() const 
+    {
+        return state_;
+    }
+
+    void setState(State s)
+    {
+        state_ = s;
+    }
+
 private:
     Fiber();    //主协程的构造函数
 

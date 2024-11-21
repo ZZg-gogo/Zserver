@@ -28,21 +28,29 @@ public:
     {
         return schedulerName_;
     }
+    //设置当前线程的携程调度器指针
+    void SetCurrentScheduler();
 
     void start();
 
     void stop();
 
+    //线程执行run方法去调度携程
+    void run();
 
-
-    template <typename TASK>
-    void addJob(TASK t, int id = -1)
+    //协程空闲执行此函数
+    virtual void idle()
     {
-        Mutex::Lock lock(mutex_);
-        job j(t, id);
+        
+    }      
 
+    template <typename T>
+    void addJob(T t, int id = -1)
+    {
+        job j(t, id);
         if (j.fiber || j.fun)
         {
+            Mutex::Lock lock(mutex_);
             tasks_.push_back(j);
             tickle();
         } 
@@ -53,7 +61,7 @@ protected:
 
 public:
     //获取当前正在运行的携程调度器
-    static Scheduler::ptr GetCurrentScheduler();
+    static Scheduler* GetCurrentScheduler();
     //获取主协程
     static Fiber::ptr GetMainFiber();
 
@@ -94,15 +102,28 @@ private:
 
         }
 
+        bool isVaild()
+        {
+            return fiber || fun;
+        }
+        
         ~job(){}
     };
 
 private:
     Mutex mutex_;
-    size_t threadNum_;                  //线程数
     std::vector<Thread::ptr> threads_;  //保存所有的线程
     std::string schedulerName_;         //调度器名称
-    std::list<job> tasks_;
+    std::list<job> tasks_;              //任务队列里面所有的任务
+
+protected:
+    std::vector<int> threadIds_;        //保存所有的线程id
+    size_t threadNum_;                  //线程数
+    size_t avtiveThreadCount_;          //活跃线程数量
+    size_t idleThreadCount_;            //空闲线程数量
+    bool isStop_;                       //是否停止
+    int rootThreadId_;                  //主线程id
+    Fiber::ptr rootFiber_;              
 };
 
 
