@@ -1,7 +1,7 @@
 #include "Fiber.h"
 #include "Config.h"
 #include "macro.h"
-
+#include "Scheduler.h"
 namespace BASE
 {
 
@@ -95,7 +95,36 @@ void Fiber::MainFun()
         LOG_ERROR(LOG_ROOT) << "Something error in Fiber id="<<cur->fiberId_;
     }
     
-    //YieldToTerm();
+    cur->yield();
+    
+}
+
+
+void Fiber::CallMainFun()
+{
+    Fiber::ptr cur = GetCurFiber(); //得到当前的协程
+    ZZG_ASSERT(cur && cur->state_ == State::RUNNING)
+    try
+    {
+        cur->cb_();
+        cur->cb_ = nullptr;
+        cur->state_ = State::TERM;
+    }
+    catch(const std::exception& e)
+    {
+        cur->cb_ = nullptr;
+        cur->state_ = State::ERROR;
+        LOG_ERROR(LOG_ROOT) << e.what();
+    }
+    catch(...)
+    {
+        cur->cb_ = nullptr;
+        cur->state_ = State::ERROR;
+        LOG_ERROR(LOG_ROOT) << "Something error in Fiber id="<<cur->fiberId_;
+    }
+    
+    cur->back();
+    
 }
 
 //每个线程的主协程直接就是运行状态
@@ -118,7 +147,7 @@ Fiber::Fiber() :
 }
 
 
-Fiber::Fiber(FiberFun fun, size_t stackSize) : 
+Fiber::Fiber(FiberFun fun, size_t stackSize, bool callerJoin) : 
     fiberId_(nextFiberId()),    
     stackSize_(stackSize),
     state_(State::INIT),
@@ -148,9 +177,20 @@ Fiber::Fiber(FiberFun fun, size_t stackSize) :
     ucontext_.uc_flags = 0;
     ucontext_.uc_stack.ss_size = stackSize_;
     ucontext_.uc_stack.ss_sp = stackPoint_;
-    ucontext_.uc_link = &MainFiber->ucontext_;
+    //ucontext_.uc_link = &MainFiber->ucontext_;
+    ucontext_.uc_link = nullptr;
 
-    makecontext(&ucontext_, MainFun, 0);
+
+    if (callerJoin)
+    {
+        makecontext(&ucontext_, CallMainFun, 0);
+    }
+    else
+    {
+        makecontext(&ucontext_, MainFun, 0);
+    }
+    
+    
 
     LOG_INFO(LOG_ROOT)<<"New Fiber Create Succ Fiber Id = "<<fiberId_<<" stackSize = "<<stackSize_;
 }
@@ -201,7 +241,8 @@ void Fiber::resume()
     SetCurFiber(this);
     ZZG_ASSERT(state_ != State::RUNNING)
     state_ = State::RUNNING;
-    if (swapcontext(&(MainFiber->ucontext_), &ucontext_))
+    
+    if (swapcontext(&(Scheduler::GetMainFiber()->ucontext_), &ucontext_))
     {
        LOG_ERROR(LOG_ROOT)<<"Fiber resume Error Reason = swapcontext";
        return;
@@ -212,8 +253,8 @@ void Fiber::resume()
 
 void Fiber::yield()
 {
-    SetCurFiber(MainFiber.get());
-    if (swapcontext(&ucontext_, &MainFiber->ucontext_))
+    SetCurFiber(Scheduler::GetMainFiber().get());
+    if (swapcontext(&ucontext_, &Scheduler::GetMainFiber()->ucontext_))
     {
        LOG_ERROR(LOG_ROOT)<<"Fiber yield Error Reason = swapcontext";
        return;
@@ -221,6 +262,28 @@ void Fiber::yield()
 
 }
 
+
+void Fiber::call()
+{
+    SetCurFiber(this);
+    ZZG_ASSERT(state_ != State::RUNNING)
+    state_ = State::RUNNING;
+    if (swapcontext(&(MainFiber->ucontext_), &ucontext_))
+    {
+       LOG_ERROR(LOG_ROOT)<<"Fiber call Error Reason = swapcontext";
+       return;
+    }
+}
+
+void Fiber::back()
+{
+    SetCurFiber(MainFiber.get());
+    if (swapcontext(&ucontext_, &(MainFiber->ucontext_)))
+    {
+       LOG_ERROR(LOG_ROOT)<<"Fiber back Error Reason = swapcontext";
+       return;
+    }
+}
 
 
 }//end namespace

@@ -2,6 +2,7 @@
 #include "macro.h"
 #include "util.h"
 
+
 namespace BASE
 {
 
@@ -57,7 +58,7 @@ Scheduler::Scheduler(size_t threadNum, bool callerJoin, const std::string& name)
             而是SchedulerFiber
         */
         SetCurrentScheduler();
-        rootFiber_.reset(new Fiber{std::bind(&Scheduler::run, this)});
+        rootFiber_.reset(new Fiber{std::bind(&Scheduler::run, this), 0, true});
         SchedulerFiber = rootFiber_;
 
         rootThreadId_ = BASE::getThreadId();
@@ -69,6 +70,15 @@ Scheduler::Scheduler(size_t threadNum, bool callerJoin, const std::string& name)
     }
 }
 
+
+Scheduler::~Scheduler()
+{
+    if (GetCurrentScheduler() == this)
+    {
+        CurScheduler = nullptr;
+    }
+    
+}
 
 void Scheduler::start()
 {
@@ -89,23 +99,36 @@ void Scheduler::start()
         threads_[i].reset(new Thread{std::bind(std::bind(&Scheduler::run, this)), "threadName_" + std::to_string(i)}); 
         threadIds_.push_back(threads_[i]->getId());
     }
+
+    if (rootFiber_)
+    {
+        rootFiber_->call();
+    }
+    
 }
 
-void Scheduler::stop()
+bool Scheduler::isStop()
 {
-
+    Mutex::Lock lock(mutex_);
+    return isStop_ && tasks_.empty() && avtiveThreadCount_ == 0;
 }
 
 
 void Scheduler::tickle()
 {
+    LOG_INFO(LOG_ROOT)<<" Scheduler::tickle";
+}
 
+void Scheduler::idle()
+{
+    LOG_INFO(LOG_ROOT)<<" Scheduler::idle";
 }
 
 
 //
 void Scheduler::run()
 {
+
     SetCurrentScheduler();
     pid_t curThreadId = BASE::getThreadId();
 
@@ -119,6 +142,7 @@ void Scheduler::run()
     Fiber::ptr idleFiber(new Fiber(std::bind(&Scheduler::idle, this)));
     Fiber::ptr cbFiber;
     
+
     job j;
     while (true)
     {
@@ -177,6 +201,7 @@ void Scheduler::run()
         {
             if (idleFiber->getState() == Fiber::State::TERM)
             {
+                LOG_INFO(LOG_ROOT)<<"Scheduler::run break";
                 break;
             }
             ++idleThreadCount_;

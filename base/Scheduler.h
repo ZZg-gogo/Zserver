@@ -7,6 +7,8 @@
 #include "Fiber.h"
 #include "NoCopyable.h"
 
+
+
 namespace BASE
 {
 
@@ -22,7 +24,7 @@ public:
     name 线程名
     */
     Scheduler(size_t threadNum = 1, bool callerJoin = true, const std::string& name = "");
-    virtual ~Scheduler(){}
+    virtual ~Scheduler();
 
     const std::string& getName() const
     {
@@ -33,16 +35,12 @@ public:
 
     void start();
 
-    void stop();
+    
 
     //线程执行run方法去调度携程
     void run();
 
-    //协程空闲执行此函数
-    virtual void idle()
-    {
-        
-    }      
+       
 
     template <typename T>
     void addJob(T t, int id = -1)
@@ -57,8 +55,11 @@ public:
     }
 
 protected:
-    void tickle();
-
+    virtual void tickle();
+    //协程空闲执行此函数
+    virtual void idle(); 
+    //是否已经完全退出了
+    virtual bool isStop();
 public:
     //获取当前正在运行的携程调度器
     static Scheduler* GetCurrentScheduler();

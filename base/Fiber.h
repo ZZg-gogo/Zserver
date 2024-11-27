@@ -28,7 +28,7 @@ public:
         ERROR       //异常了
     };
 public:
-    Fiber(FiberFun fun, size_t stackSize = 0);//子协程的构造函数
+    Fiber(FiberFun fun, size_t stackSize = 0,  bool callerJoin = false);//子协程的构造函数
     ~Fiber();
 
     //重置协程的执行函数
@@ -48,6 +48,10 @@ public:
         state_ = s;
     }
 
+    void call();
+
+    void back();
+
 private:
     Fiber();    //主协程的构造函数
 
@@ -65,6 +69,9 @@ public:
     static void YieldToTerm();
     //ucontext协程函数
     static void MainFun();
+    //callerJoin的线程下面的协程用该函数
+    static void CallMainFun();
+    
 
     static uint64_t getFiberCount() 
     {
