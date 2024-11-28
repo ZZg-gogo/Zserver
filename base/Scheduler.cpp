@@ -1,13 +1,11 @@
 #include "Scheduler.h"
 #include "macro.h"
 #include "util.h"
-
-
 namespace BASE
 {
 
 
-
+//当前线程所持有的那个调度器
 static thread_local Scheduler* CurScheduler = nullptr;
 //这个调度携程 也就是每个线程的主协程
 static thread_local Fiber::ptr SchedulerFiber = nullptr;
@@ -150,7 +148,6 @@ void Scheduler::run()
 
         {
             Mutex::Lock lock(mutex_);
-
             for (auto it = tasks_.begin(); it !=  tasks_.end(); ++it)
             {
                 //如果当前的任务没有指定线程 或者指定当前线程运行的话
@@ -158,6 +155,7 @@ void Scheduler::run()
                 {
                     j = *it;
                     tasks_.erase(it);
+                    break;
                 }
             }
         }

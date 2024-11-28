@@ -96,7 +96,9 @@ void Fiber::MainFun()
     }
     
     cur->yield();
-    
+
+
+    ZZG_ASSERT(false);
 }
 
 
@@ -125,6 +127,8 @@ void Fiber::CallMainFun()
     
     cur->back();
     
+
+    ZZG_ASSERT(false);
 }
 
 //每个线程的主协程直接就是运行状态

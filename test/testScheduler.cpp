@@ -2,9 +2,16 @@
 #include "../base/Scheduler.h"
 
 
+void fun(void)
+{
+    LOG_INFO(LOG_ROOT)<<"my fun ...... ";
+}
+
 int main(int argc, char **argv)
 {
-    BASE::Scheduler scheduler(1, false);
+    BASE::Scheduler scheduler(3, true);
+
+    scheduler.addJob(fun);
 
     scheduler.start();
 

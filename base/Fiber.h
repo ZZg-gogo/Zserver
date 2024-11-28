@@ -48,8 +48,9 @@ public:
         state_ = s;
     }
 
+    //保存callerJoin那个线程的环境
     void call();
-
+    //恢复callerJoin那个线程的环境
     void back();
 
 private:
