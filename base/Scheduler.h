@@ -55,6 +55,19 @@ public:
         } 
     }
 
+    template <typename T>
+    void addMultiJob(const T& store)
+    {
+        Mutex::Lock lock(mutex_);
+
+        for (auto& i : store)
+        {
+            job j(i, -1);
+            tasks_.push_back(i);
+        }
+        tickle();
+    }
+
 protected:
     virtual void tickle();
     //协程空闲执行此函数

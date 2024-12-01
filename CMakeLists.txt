@@ -25,6 +25,7 @@ set(base_src
 ../base/Lock.cpp
 ../base/Fiber.cpp
 ../base/Scheduler.cpp
+../base/IoManager.cpp
 )
 
 set(src
@@ -50,11 +51,12 @@ add_executable(TestContext ../test/testUcontext.cpp ${test_util_src} )
 
 add_executable(testFiber ../test/testFiber.cpp ${base_src})
 target_link_libraries(testFiber ${Boost_LIBRARIES})
-target_link_libraries(testFiber PRIVATE yaml-cpp)   
-endif()
-
+target_link_libraries(testFiber PRIVATE yaml-cpp) 
 
 
 add_executable(testScheduler ../test/testScheduler.cpp ${base_src})
 target_link_libraries(testScheduler ${Boost_LIBRARIES})
 target_link_libraries(testScheduler PRIVATE yaml-cpp)
+
+endif()
+

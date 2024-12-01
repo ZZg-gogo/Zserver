@@ -3,11 +3,32 @@
 #include <execinfo.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #include "Logger.h"
 #include "Fiber.h"
 
 namespace BASE
 {
+
+int SetNoBlock(int fd)
+{
+    int flags = ::fcntl(fd, F_GETFL);
+    if (-1 == flags)
+    {
+        LOG_ERROR(LOG_ROOT)<<"SetNoBlock fcntl Error1";
+        return -1;
+    }
+    
+
+    if (::fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1) 
+    {
+        LOG_ERROR(LOG_ROOT)<<"SetNoBlock fcntl Error2";
+        return -1;
+    }
+
+    return 0;
+}
+
 
 pid_t getThreadId()   //获取线程id
 {

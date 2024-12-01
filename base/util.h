@@ -18,6 +18,8 @@ void Backtrace(std::vector<std::string> & v, int size, int skip);
 
 std::string Backtrace(int size, int skip);    //直接返回一个堆栈信息的字符串
 
+//设置非阻塞的fd
+int SetNoBlock(int fd);
 
 class Time
 {
