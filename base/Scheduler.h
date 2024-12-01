@@ -33,9 +33,10 @@ public:
     //设置当前线程的携程调度器指针
     void SetCurrentScheduler();
 
+    //启动协程调度器
     void start();
-
-    
+    //退出协程调度器
+    void stop();
 
     //线程执行run方法去调度携程
     void run();

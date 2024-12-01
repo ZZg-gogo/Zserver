@@ -95,7 +95,10 @@ void Fiber::MainFun()
         LOG_ERROR(LOG_ROOT) << "Something error in Fiber id="<<cur->fiberId_;
     }
     
-    cur->yield();
+    Fiber *p = cur.get();
+    cur.reset();
+    p->yield();
+    //cur->yield();
 
 
     ZZG_ASSERT(false);
@@ -109,7 +112,6 @@ void Fiber::CallMainFun()
     try
     {
         cur->cb_();
-        cur->cb_ = nullptr;
         cur->state_ = State::TERM;
     }
     catch(const std::exception& e)
@@ -125,7 +127,10 @@ void Fiber::CallMainFun()
         LOG_ERROR(LOG_ROOT) << "Something error in Fiber id="<<cur->fiberId_;
     }
     
-    cur->back();
+    Fiber *p = cur.get();
+    cur.reset();
+    p->back();
+    //cur->back();
     
 
     ZZG_ASSERT(false);

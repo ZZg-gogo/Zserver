@@ -71,6 +71,12 @@ Scheduler::Scheduler(size_t threadNum, bool callerJoin, const std::string& name)
 
 Scheduler::~Scheduler()
 {
+    if (!isStop_)
+    {
+        stop();
+    }
+    
+
     if (GetCurrentScheduler() == this)
     {
         CurScheduler = nullptr;
@@ -98,9 +104,49 @@ void Scheduler::start()
         threadIds_.push_back(threads_[i]->getId());
     }
 
+
     if (rootFiber_)
     {
         rootFiber_->call();
+    }
+}
+
+//退出协程调度器
+void Scheduler::stop()
+{
+    LOG_INFO(LOG_ROOT)<<"Scheduler::stoping";
+    isStop_ = true;
+    if (rootThreadId_ == -1)
+    {
+        ZZG_ASSERT(GetCurrentScheduler() != this);
+    }
+    else
+    {
+        ZZG_ASSERT(GetCurrentScheduler() == this);
+    }
+
+    for (int i = 0; i < threadNum_; i++)
+    {
+        tickle();
+    }
+    
+    if (rootFiber_)
+    {
+        tickle();
+    }
+
+
+    
+    std::vector<Thread::ptr> thrs;
+    {
+        Mutex::Lock lock(mutex_);
+        thrs.swap(threads_);
+    }
+    
+
+    for (auto& t : thrs)
+    {
+        t->join();
     }
     
 }
@@ -151,13 +197,16 @@ void Scheduler::run()
             for (auto it = tasks_.begin(); it !=  tasks_.end(); ++it)
             {
                 //如果当前的任务没有指定线程 或者指定当前线程运行的话
-                if (it->threadId == -1 ||  it->threadId == curThreadId)
+                if (it->threadId == -1 ||  threadIds_[it->threadId] == curThreadId)
                 {
                     j = *it;
                     tasks_.erase(it);
                     break;
                 }
             }
+
+            if (j.isVaild())
+                ++avtiveThreadCount_;
         }
 
 
@@ -166,32 +215,40 @@ void Scheduler::run()
         }
         else if (j.fun) 
         {
-            //functional-->fiber
-            j.fiber.reset(new Fiber(j.fun));  
+            if (cbFiber)
+            {
+                cbFiber->reset(j.fun);
+            }
+            else
+            {
+                cbFiber.reset(new Fiber(j.fun));
+            }
+            
         }
 
         if (j.isVaild())
         {
-            ++avtiveThreadCount_;
             //运行当前的协程
-            j.fiber->resume();
+            cbFiber->resume();
             --avtiveThreadCount_;
 
             //如果说当前协程的状态是就绪态 那么还要继续加入到队列中
-            if (j.fiber->getState() == Fiber::State::READY)
+            if (cbFiber->getState() == Fiber::State::READY)
             {
-                addJob(j.fiber);
+                addJob(cbFiber);
+                cbFiber.reset();
             }
-            else if (j.fiber->getState() != Fiber::State::ERROR 
-                        && j.fiber->getState() != Fiber::State::TERM)
+            else if (cbFiber->getState() != Fiber::State::ERROR 
+                        && cbFiber->getState() != Fiber::State::TERM)
             {
                 //协程被挂起
-                j.fiber->setState(Fiber::State::SUSPENDED);
+                cbFiber->setState(Fiber::State::SUSPENDED);
+                cbFiber.reset();
             } 
-            else if (j.fiber->getState() == Fiber::State::ERROR 
-                        || j.fiber->getState() == Fiber::State::TERM)
+            else if (cbFiber->getState() == Fiber::State::ERROR 
+                        || cbFiber->getState() == Fiber::State::TERM)
             {
-                j.fiber->reset(nullptr);
+                cbFiber->reset(nullptr);
             }
         }
         //没有拿到任务
@@ -215,6 +272,9 @@ void Scheduler::run()
             --idleThreadCount_;
         }  
     }
+    
+
+    LOG_INFO(LOG_ROOT)<<"Scheduler::run Thread Exit curThreadId="<<curThreadId;
     
 }
 

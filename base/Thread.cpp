@@ -57,6 +57,7 @@ Thread::Thread(ThreadCallback cb, const std::string& name) :
 
 Thread::~Thread()
 {
+    LOG_INFO(LOG_ROOT)<<"Thread::~Thread name="<<threadName_;
     if (thread_)
     {
         pthread_detach(thread_);

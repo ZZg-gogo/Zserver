@@ -9,15 +9,20 @@ void fun(void)
 
 int main(int argc, char **argv)
 {
-    BASE::Scheduler scheduler(3, true);
+    BASE::Scheduler scheduler(3, false);
 
-    scheduler.addJob(fun);
+    for (int i = 0; i < 100; i++)
+    {
+        scheduler.addJob(fun, 1);
+    }
+    
+    
 
     scheduler.start();
 
-    LOG_INFO(LOG_ROOT)<<"begin sleep";
+    LOG_INFO(LOG_ROOT)<<"main end";
 
-    sleep(10);
+    //sleep(10);
 
     return 0;
 }
