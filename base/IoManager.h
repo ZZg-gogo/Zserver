@@ -38,8 +38,12 @@ public:
             event(EventType::NONE),
             fd(-1)
         {}
-
+        //根据事件类型获取到不同事件
         EventContext& getContext(EventType event);
+        //将某个事件重置
+        void resetContext(EventContext& ctx);
+        //触发某个事件
+        void triggerEvent(EventType type);
 
         EventContext readCallback;      //读回调
         EventContext writeCallback;     //写回调
@@ -55,9 +59,9 @@ public:
     int addEvent(int fd, EventType type, std::function<void()> cb = nullptr);
     //删除事件
     int delEvent(int fd, EventType type);
-    //取消事件
+    //取消事件 但是会强制触发事件一次
     int cancelEvent(int fd, EventType type);
-    //把该句柄下面的所有事件都取消
+    //把该句柄下面的所有事件都取消 事件全都触发
     int cancalAll(int fd);
 protected:
     virtual void idle() override;

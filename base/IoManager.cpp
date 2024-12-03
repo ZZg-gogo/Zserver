@@ -8,6 +8,37 @@ namespace BASE
 {
 
 
+IoManager * IoManager::GetThis()
+{
+    dynamic_cast<IoManager*>(Scheduler::GetCurrentScheduler());
+}
+
+
+void IoManager::FdContext::triggerEvent(EventType type)
+{
+    EventContext& ctx = getContext(type);
+
+    event = static_cast<EventType>(event & ~type);
+    
+    if (ctx.cb)
+    {
+        ctx.scheduler->addJob(ctx.cb);
+    }
+    else if (ctx.fiber)
+    {
+        ctx.scheduler->addJob(ctx.fiber);
+    }
+
+    ctx.scheduler = nullptr;  
+}
+
+void IoManager::FdContext::resetContext(EventContext& ctx)
+{
+    ctx.cb = nullptr;
+    ctx.fiber.reset();
+    ctx.scheduler = nullptr;
+}
+
 IoManager::FdContext::EventContext& IoManager::FdContext::getContext(EventType event)
 {
     if (event & READ)
@@ -130,16 +161,24 @@ int IoManager::delEvent(int fd, EventType type)
 
     int op;
     auto it = fdContexts_.find(fd);
-    if (it == fdContexts_.end())    //事件第一次被添加进来
+    if (it == fdContexts_.end())    //删除一个已经不存在的事件了
     {
         LOG_ERROR(LOG_ROOT)<<"IoManager::delEvent fail fd = "<<fd<<" not exist";
-        return 0;
+        ZZG_ASSERT(false);
+        return -1;
     }
     else
     {
+        if (!(fdContexts_[fd]->event & type))
+        {
+            LOG_ERROR(LOG_ROOT)<<"IoManager::delEvent  no this event = "<<type;
+            ZZG_ASSERT(false);
+            return -1;
+        }
         
+
         fdContexts_[fd]->event = static_cast<EventType> (fdContexts_[fd]->event & ~type);
-        if (fdContexts_[fd]->event == NONE)
+        if (fdContexts_[fd]->event == NONE)//当前已经没有关注的事件了
         {
             op = EPOLL_CTL_DEL;
         }
@@ -160,8 +199,132 @@ int IoManager::delEvent(int fd, EventType type)
 
     --pendingEventCount_;
 
+    //将事件进行重置
+    FdContext::EventContext& eventCtx = fdContexts_[fd]->getContext(type);
+    fdContexts_[fd]->resetContext(eventCtx);
+
+    if (op == EPOLL_CTL_DEL)
+    {
+        LOG_INFO(LOG_ROOT)<<"IoManager::delEvent  fd = "<<fd;
+        fdContexts_.erase(it);
+    }
+
     return 0;
 }
+
+int IoManager::cancelEvent(int fd, EventType type)
+{
+    Mutex::Lock lock(mutex_);
+
+    int op;
+    auto it = fdContexts_.find(fd);
+    if (it == fdContexts_.end())    //取消一个已经不存在的事件了
+    {
+        LOG_ERROR(LOG_ROOT)<<"IoManager::cancelEvent fail fd = "<<fd<<" not exist";
+        ZZG_ASSERT(false);
+        return -1;
+    }
+    else
+    {
+        if (!(fdContexts_[fd]->event & type))
+        {
+            LOG_ERROR(LOG_ROOT)<<"IoManager::cancelEvent  no this event = "<<type;
+            ZZG_ASSERT(false);
+            return -1;
+        }
+        
+
+        fdContexts_[fd]->event = static_cast<EventType> (fdContexts_[fd]->event & ~type);
+        if (fdContexts_[fd]->event == NONE)//当前已经没有关注的事件了
+        {
+            op = EPOLL_CTL_DEL;
+        }
+        else
+        {
+            op = EPOLL_CTL_MOD;
+        }
+    }
+
+    epoll_event event;
+    event.events = EPOLLET | fdContexts_[fd]->event;
+    event.data.ptr = fdContexts_[fd].get();
+    if (::epoll_ctl(epollFd_, op, fd, &event) < 0)
+    {
+        LOG_ERROR(LOG_ROOT)<<"IoManager::cancelEvent epoll_ctl  fail";
+        return -1;
+    }
+
+    --pendingEventCount_;
+
+    //将事件进行触发
+    FdContext::EventContext& eventCtx = fdContexts_[fd]->getContext(type);
+    fdContexts_[fd]->triggerEvent(type);
+    
+
+    if (op == EPOLL_CTL_DEL)
+    {
+        LOG_INFO(LOG_ROOT)<<"IoManager::cancelEvent  fd = "<<fd;
+        fdContexts_.erase(it);
+    }
+    
+    //fdContexts_[fd]->resetContext(eventCtx);
+
+    return 0;
+}
+
+int IoManager::cancalAll(int fd)
+{
+
+    Mutex::Lock lock(mutex_);
+
+    int op = EPOLL_CTL_DEL;
+    auto it = fdContexts_.find(fd);
+    if (it == fdContexts_.end())    //取消一个已经不存在的事件了
+    {
+        LOG_ERROR(LOG_ROOT)<<"IoManager::cancalAll fail fd = "<<fd<<" not exist";
+        ZZG_ASSERT(false);
+        return -1;
+    }
+    else
+    {
+        if ((fdContexts_[fd]->event == EventType::NONE))
+        {
+            LOG_ERROR(LOG_ROOT)<<"IoManager::cancalAll  no this event = ";
+            ZZG_ASSERT(false);
+            return -1;
+        }
+    }
+
+    epoll_event event;
+    event.events = 0;
+    event.data.ptr = fdContexts_[fd].get();
+    if (::epoll_ctl(epollFd_, op, fd, &event) < 0)
+    {
+        LOG_ERROR(LOG_ROOT)<<"IoManager::cancalAll epoll_ctl  fail";
+        return -1;
+    }
+
+
+    if (fdContexts_[fd]->event & EventType::READ)
+    {
+        fdContexts_[fd]->triggerEvent(EventType::READ);
+        --pendingEventCount_;
+    }
+
+    if (fdContexts_[fd]->event & EventType::WRITE)
+    {
+        fdContexts_[fd]->triggerEvent(EventType::WRITE);
+        --pendingEventCount_;
+    }
+
+    fdContexts_[fd]->event = EventType::NONE;
+    
+    fdContexts_.erase(it);
+
+    LOG_INFO(LOG_ROOT)<<"IoManager::cancalAll  fd = "<<fd;
+    return 0;
+}
+
 
 //从阻塞中唤醒
 void IoManager::tickle() 
