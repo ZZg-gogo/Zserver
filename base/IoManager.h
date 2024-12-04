@@ -36,7 +36,8 @@ public:
             readCallback(),
             writeCallback(),
             event(EventType::NONE),
-            fd(-1)
+            fd(-1),
+            fdMutex_()
         {}
         //根据事件类型获取到不同事件
         EventContext& getContext(EventType event);
@@ -49,6 +50,7 @@ public:
         EventContext writeCallback;     //写回调
         EventType event;                //我关心的事件类型
         int fd;                         //关联的文件描述符 
+        Mutex fdMutex_;                 //多线程操作加锁
     };
 
 public:
