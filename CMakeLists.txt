@@ -36,11 +36,13 @@ set(src
 set(test_util_src
 )
 
-
-if(false)
 add_executable(MyServer ${src} ${base_src})
 target_link_libraries(MyServer ${Boost_LIBRARIES})
 target_link_libraries(MyServer PRIVATE yaml-cpp)
+
+
+if(false)
+
 
 add_executable(TestUtil ../test/testUtil.cpp ${base_src})
 target_link_libraries(TestUtil ${Boost_LIBRARIES})

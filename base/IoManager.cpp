@@ -399,9 +399,9 @@ bool IoManager::isStop()
 void IoManager::tickleRead()
 {
     uint64_t num = 0;
-    if (sizeof(num) != ::read(ticklefd_, &num, sizeof(num)))
+    while (sizeof(num) == ::read(ticklefd_, &num, sizeof(num)))
     {
-        LOG_ERROR(LOG_ROOT)<<"IoManager::tickleRead ERROR";
+        LOG_ERROR(LOG_ROOT)<<"IoManager::tickleRead SUSS";
     }
 }
 
@@ -425,10 +425,11 @@ void IoManager::idle()
         {
             const int MaxTimeOut = 3000;
             count = epoll_wait(epollFd_, events, MaxEvents, MaxTimeOut);
-
+            //当发生超时的时候 count是0
             if (count < 0 )
             {
                 int err = errno;
+
                 if (err == EINTR)
                 {
                     continue;
@@ -452,10 +453,47 @@ void IoManager::idle()
             events[i].events;
             FdContext * fdCtx = static_cast<FdContext*>(events[i].data.ptr);
             
-            
+            //操作进行加锁
+            Mutex::Lock lock(fdCtx->fdMutex_);
+
+            int realEvents = EventType::NONE;
+            if (events[i].events & EventType::READ)
+            {
+                realEvents |= EventType::READ;
+            }
+
+            if (events[i].events & EventType::WRITE)
+            {
+                realEvents |= EventType::WRITE;
+            }
+
+            int remainEvents = fdCtx->event & ~realEvents;
+            int op = remainEvents ? EPOLL_CTL_DEL : EPOLL_CTL_MOD;
+            epoll_event newEvent;
+            newEvent.events = EPOLLET | remainEvents;
+            newEvent.data.ptr = fdCtx;
+            if (::epoll_ctl(epollFd_, op, fdCtx->fd, &newEvent) < 0)
+            {
+                LOG_ERROR(LOG_ROOT)<<"IoManager::idle epoll_ctl  fail fd="<<fdCtx->fd;
+            }
+
+            if (events[i].events & EventType::READ)
+            {
+                fdCtx->triggerEvent(EventType::READ);
+                --pendingEventCount_;
+            }
+
+            if (events[i].events & EventType::WRITE)
+            {
+                fdCtx->triggerEvent(EventType::WRITE);
+                --pendingEventCount_;
+            }
         }
         
         
+        //从idle中被唤醒了 然后需要去跑run方法了
+        Fiber::ptr CurFiber = Fiber::GetCurFiber();
+        CurFiber->yield();
     }
     
 
