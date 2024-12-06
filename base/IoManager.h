@@ -81,7 +81,7 @@ private:
 
 private:
     int epollFd_;                                   //epoll描述符
-    int ticklefd_;                                  //从epoll_wait中唤醒
+    int pipefd_[2];                                 //管道
     std::atomic<std::size_t> pendingEventCount_;    //当前等待执行的事件数量
     std::map<int , FdContext::ptr> fdContexts_;     //保存所有的fd-->FdContext
     Mutex mutex_;                                   //互斥锁

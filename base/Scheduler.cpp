@@ -34,6 +34,7 @@ Fiber::ptr Scheduler::GetMainFiber()
 
 
 Scheduler::Scheduler(size_t threadNum, bool callerJoin, const std::string& name) :
+    mutex_(),
     threadNum_(threadNum),
     schedulerName_(name),
     avtiveThreadCount_(0),
@@ -127,7 +128,9 @@ void Scheduler::stop()
 
     for (int i = 0; i < threadNum_; i++)
     {
+        
         tickle();
+        //sleep(1);
     }
     
     if (rootFiber_)

@@ -29,7 +29,7 @@ void IoManager::FdContext::triggerEvent(EventType type)
         ctx.scheduler->addJob(ctx.fiber);
     }
 
-    ctx.scheduler = nullptr;  
+    ctx.scheduler = nullptr;
 }
 
 void IoManager::FdContext::resetContext(EventContext& ctx)
@@ -60,7 +60,6 @@ IoManager::FdContext::EventContext& IoManager::FdContext::getContext(EventType e
 IoManager::IoManager(size_t threadNum, bool callerJoin, const std::string& name) :
     Scheduler(threadNum, callerJoin, name),
     epollFd_(::epoll_create1(EPOLL_CLOEXEC)),
-    ticklefd_(::eventfd(0, EFD_CLOEXEC|EFD_NONBLOCK)),
     pendingEventCount_{0},
     fdContexts_(),
     mutex_()
@@ -71,15 +70,19 @@ IoManager::IoManager(size_t threadNum, bool callerJoin, const std::string& name)
         exit(-1);
     }
 
-    if (ticklefd_ < 0)
-    {
-        LOG_FAIL(LOG_ROOT)<<"IoManager::IoManager eventfd fail";
+
+    
+
+    if (::pipe(pipefd_) < 0) {
+        LOG_FAIL(LOG_ROOT) << "IoManager::IoManager pipe fail";
         exit(-1);
     }
-    
+
+    BASE::SetNoBlock(pipefd_[0]);
     //将唤醒描述符的读写事件回调添加进来
-    addEvent(ticklefd_, WRITE, std::bind(&IoManager::tickle, this));
-    addEvent(ticklefd_, READ, std::bind(&IoManager::tickleRead, this));
+    addEvent(pipefd_[0], READ, std::bind(&IoManager::tickleRead, this));
+    --pendingEventCount_;
+    //addEvent(ticklefd_, READ, std::bind(&IoManager::tickleRead, this));
 
     start();
 }
@@ -88,7 +91,8 @@ IoManager::IoManager(size_t threadNum, bool callerJoin, const std::string& name)
 IoManager::~IoManager()
 {
     close(epollFd_);
-    close(ticklefd_);
+    close(pipefd_[0]);
+    close(pipefd_[1]);
 
     for(auto& i : fdContexts_)
     {
@@ -133,8 +137,16 @@ int IoManager::addEvent(int fd, EventType type, std::function<void()> cb)
     Mutex::Lock lock(con->fdMutex_);
     
     epoll_event event;
-    event.events = EPOLLET | con->event;
+    if (fd == pipefd_[0])
+    {
+        event.events = con->event;
+    }
+    else
+    {
+        event.events = EPOLLET | con->event;
+    }
     event.data.ptr = con.get();
+
 
     if (::epoll_ctl(epollFd_, op, fd, &event) < 0)
     {
@@ -383,10 +395,10 @@ int IoManager::cancalAll(int fd)
 //从阻塞中唤醒
 void IoManager::tickle() 
 {
-    uint64_t num = 1;
-    if (sizeof(num) != ::write(ticklefd_, &num, sizeof(num)))
+    uint8_t signal = 1;
+    if (::write(pipefd_[1], &signal, sizeof(signal)) != sizeof(signal)) 
     {
-        LOG_ERROR(LOG_ROOT)<<"IoManager::tickle ERROR";
+        LOG_ERROR(LOG_ROOT) << "IoManager::tickle ERROR";
     }
 }
 
@@ -396,12 +408,13 @@ bool IoManager::isStop()
 }
 
 
-void IoManager::tickleRead()
+void IoManager::tickleRead() 
 {
-    uint64_t num = 0;
-    while (sizeof(num) == ::read(ticklefd_, &num, sizeof(num)))
+    uint8_t signal = 0;
+    if(::read(pipefd_[0], &signal, sizeof(signal)) > 0) 
     {
-        LOG_ERROR(LOG_ROOT)<<"IoManager::tickleRead SUSS";
+        LOG_INFO(LOG_ROOT) << "tickleRead triggered";
+        // 唤醒任务或 idle 协程
     }
 }
 
@@ -413,6 +426,7 @@ void IoManager::idle()
 
     while (true)
     {
+        LOG_INFO(LOG_ROOT)<<"IoManager::idle coming";
         if (isStop())
         {
             LOG_INFO(LOG_ROOT)<<"IoManager::idle isStop";
@@ -447,14 +461,19 @@ void IoManager::idle()
             }
             
         } while (true);
-        
+
         for (int i = 0; i < count; i++)
         {
-            events[i].events;
             FdContext * fdCtx = static_cast<FdContext*>(events[i].data.ptr);
             
             //操作进行加锁
             Mutex::Lock lock(fdCtx->fdMutex_);
+
+            if (fdCtx->fd == pipefd_[0])
+            {
+                tickleRead();
+                continue;
+            }
 
             int realEvents = EventType::NONE;
             if (events[i].events & EventType::READ)

@@ -36,13 +36,13 @@ set(src
 set(test_util_src
 )
 
-add_executable(MyServer ${src} ${base_src})
-target_link_libraries(MyServer ${Boost_LIBRARIES})
-target_link_libraries(MyServer PRIVATE yaml-cpp)
+
 
 
 if(false)
-
+add_executable(MyServer ${src} ${base_src})
+target_link_libraries(MyServer ${Boost_LIBRARIES})
+target_link_libraries(MyServer PRIVATE yaml-cpp)
 
 add_executable(TestUtil ../test/testUtil.cpp ${base_src})
 target_link_libraries(TestUtil ${Boost_LIBRARIES})
@@ -55,10 +55,15 @@ add_executable(testFiber ../test/testFiber.cpp ${base_src})
 target_link_libraries(testFiber ${Boost_LIBRARIES})
 target_link_libraries(testFiber PRIVATE yaml-cpp) 
 
-
 add_executable(testScheduler ../test/testScheduler.cpp ${base_src})
 target_link_libraries(testScheduler ${Boost_LIBRARIES})
 target_link_libraries(testScheduler PRIVATE yaml-cpp)
 
+
 endif()
 
+
+
+add_executable(testIoManager ../test/testIoManager.cpp ${base_src})
+target_link_libraries(testIoManager ${Boost_LIBRARIES})
+target_link_libraries(testIoManager PRIVATE yaml-cpp)
