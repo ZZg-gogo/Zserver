@@ -90,6 +90,7 @@ IoManager::IoManager(size_t threadNum, bool callerJoin, const std::string& name)
 
 IoManager::~IoManager()
 {
+    stop();
     close(epollFd_);
     close(pipefd_[0]);
     close(pipefd_[1]);
@@ -148,16 +149,11 @@ int IoManager::addEvent(int fd, EventType type, std::function<void()> cb)
     event.data.ptr = con.get();
 
 
-    if (::epoll_ctl(epollFd_, op, fd, &event) < 0)
-    {
-        LOG_ERROR(LOG_ROOT)<<"IoManager::addEvent epoll_ctl  fail";
-        return -1;
-    }
 
-    ++pendingEventCount_;
     
     FdContext::EventContext& eventCtx = con->getContext(type);
     eventCtx.scheduler = Scheduler::GetCurrentScheduler();
+    //LOG_ERROR(LOG_ROOT)<<"IoManager::addEvent GetCurrentScheduler ="<<eventCtx.scheduler;
     if (cb)
     {
         eventCtx.cb.swap(cb);
@@ -168,7 +164,16 @@ int IoManager::addEvent(int fd, EventType type, std::function<void()> cb)
         ZZG_ASSERT(eventCtx.fiber->getState() == Fiber::State::RUNNING);
     }
 
+    
+    if (::epoll_ctl(epollFd_, op, fd, &event) < 0)
+    {
+        LOG_ERROR(LOG_ROOT)<<"IoManager::addEvent epoll_ctl  fail";
+        return -1;
+    }
 
+    ++pendingEventCount_;
+
+    LOG_INFO(LOG_ROOT)<<"addEvent Succ type="<<(int)type<<" fd="<<fd;
 
     return 0;
 }
@@ -474,6 +479,8 @@ void IoManager::idle()
                 tickleRead();
                 continue;
             }
+
+            
 
             int realEvents = EventType::NONE;
             if (events[i].events & EventType::READ)

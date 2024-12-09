@@ -106,10 +106,6 @@ void Scheduler::start()
     }
 
 
-    if (rootFiber_)
-    {
-        rootFiber_->call();
-    }
 }
 
 //退出协程调度器
@@ -136,6 +132,11 @@ void Scheduler::stop()
     if (rootFiber_)
     {
         tickle();
+    }
+
+    if (rootFiber_)
+    {
+        rootFiber_->call();
     }
 
 
@@ -169,6 +170,10 @@ void Scheduler::tickle()
 void Scheduler::idle()
 {
     LOG_INFO(LOG_ROOT)<<" Scheduler::idle";
+    while(!isStop()) 
+    {
+        BASE::Fiber::YieldToSuspended();
+    }
 }
 
 

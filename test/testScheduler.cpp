@@ -9,7 +9,7 @@ void fun(void)
 
 int main(int argc, char **argv)
 {
-    BASE::Scheduler scheduler(3, false);
+    BASE::Scheduler scheduler(3, true);
 
     for (int i = 0; i < 100; i++)
     {
