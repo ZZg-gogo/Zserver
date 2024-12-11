@@ -10,6 +10,11 @@
 namespace BASE
 {
 
+// 获取当前时间戳，单位为微秒（us）
+uint64_t GetTimestampUs() ;
+// 获取当前时间戳，单位为毫秒（ms）
+uint64_t GetTimestampMs() ;
+
 pid_t getThreadId();    //获取线程id
 uint64_t getFiberId(); //获取携程id
 

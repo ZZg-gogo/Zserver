@@ -3,6 +3,7 @@
 #include <execinfo.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <fcntl.h>
 #include "Logger.h"
 #include "Fiber.h"
@@ -39,6 +40,27 @@ uint64_t getFiberId()  //获取携程id
 {
     return Fiber::getCurFiberId();
 }
+
+
+
+
+// 获取当前时间戳，单位为微秒（us）
+uint64_t GetTimestampUs() 
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (uint64_t)tv.tv_sec * 1000000 + tv.tv_usec;
+}
+
+// 获取当前时间戳，单位为毫秒（ms）
+uint64_t GetTimestampMs() 
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (uint64_t)tv.tv_sec * 1000 + tv.tv_usec / 1000;
+}
+
+
 
 
 //获取堆栈信息放到v中 size是获取多少层 skip要跳过多少层

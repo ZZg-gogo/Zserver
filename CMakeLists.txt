@@ -26,6 +26,7 @@ set(base_src
 ../base/Fiber.cpp
 ../base/Scheduler.cpp
 ../base/IoManager.cpp
+../base/Timer.cpp
 )
 
 set(src
