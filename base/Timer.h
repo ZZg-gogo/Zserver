@@ -22,7 +22,7 @@ public:
 
     struct Compare
     {
-        bool operator()(const ptr& a, const ptr& b)
+        bool operator()(const ptr& a, const ptr& b) const
         {
             return a->getNextCallbackTime() < b->getNextCallbackTime();
         }
@@ -30,6 +30,12 @@ public:
 public:
     Timer() = delete;
     ~Timer() = default;
+
+    //取消一个定时器
+    bool cancel();
+    //刷新定时器的时间
+    bool refresh();
+
 private:
     //外部不能直接创建Timer对象
     Timer(uint64_t ms, Callback cb, bool repeat, TimerManager * manager);
@@ -39,10 +45,7 @@ private:
     {
         return callCbTime_;
     }
-    //取消一个定时器
-    bool cancel();
-    //刷新定时器的时间
-    bool refresh();
+
 
 private:
     uint64_t ms_;               //定时器的周期
@@ -74,6 +77,8 @@ public:
     uint64_t getNextTime();
     //超时触发了 获取到那些需要执行回调的函数
     void getExpireCallback(std::vector<Callback> & cbs);
+    //定时器事件是否为空
+    bool empty() ;
 protected:
     //插入了一个到期时间最小的timer
     virtual void minTimerChange() = 0;

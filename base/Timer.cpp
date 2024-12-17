@@ -88,6 +88,12 @@ Timer::ptr TimerManager::addConditionTimer(uint64_t ms, Callback cb,
 }
 
 
+bool TimerManager::empty()
+{
+    Mutex::Lock lock(mutex_);
+    return 0 == timers_.size();
+}
+
 uint64_t TimerManager::getNextTime()
 {
     Mutex::Lock lock(mutex_);

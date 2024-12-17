@@ -21,11 +21,27 @@ void fun()
     LOG_INFO(LOG_ROOT)<<"fun fun"<<++nNum;
 }
 
+
+void testTimer()
+{
+    LOG_INFO(LOG_ROOT)<<"testTimer";
+}
+
 int main()
 {
 
     BASE::IoManager Manager{3, true, "IOM"};
-    
+
+
+    BASE::Timer::ptr timer = Manager.addTimer(1000, [&timer](){
+        testTimer();
+        static int i = 0;
+        if (++i == 5)
+        {
+            timer->cancel();
+        }
+        
+    }, true);
 
     int sockfd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
     if (sockfd == -1) {

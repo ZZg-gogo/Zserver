@@ -4,10 +4,12 @@
 #include <map>
 #include <sys/eventfd.h>
 
+#include "Timer.h"
+
 namespace BASE
 {
 
-class IoManager : public Scheduler
+class IoManager : public Scheduler, public TimerManager
 {
 public:
     typedef std::shared_ptr<IoManager> ptr;
@@ -71,7 +73,8 @@ protected:
     //是否已经完全退出了
     virtual bool isStop() override;
 
-
+    //插入了一个到期时间最小的timer
+    virtual void minTimerChange() override;
 public:
     //获取当前的IoManager
     static IoManager * GetThis();

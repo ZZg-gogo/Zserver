@@ -409,7 +409,7 @@ void IoManager::tickle()
 
 bool IoManager::isStop()
 {
-    return Scheduler::isStop() && pendingEventCount_ == 0;    
+    return TimerManager::empty() && pendingEventCount_ == 0 && Scheduler::isStop();    
 }
 
 
@@ -422,6 +422,14 @@ void IoManager::tickleRead()
         // 唤醒任务或 idle 协程
     }
 }
+
+
+//插入了一个到期时间最小的timer
+void IoManager::minTimerChange()
+{
+    tickle();
+}
+
 
 void IoManager::idle()
 {
@@ -443,7 +451,13 @@ void IoManager::idle()
         do
         {
             const int MaxTimeOut = 3000;
-            count = epoll_wait(epollFd_, events, MaxEvents, MaxTimeOut);
+            uint64_t nextTime = getNextTime();  //定时器的最小时间
+            if (nextTime > MaxTimeOut)//定时器的时间大于MaxTimeOut
+            {
+                nextTime = MaxTimeOut;
+            }
+            
+            count = epoll_wait(epollFd_, events, MaxEvents, nextTime);
             //当发生超时的时候 count是0
             if (count < 0 )
             {
@@ -466,6 +480,15 @@ void IoManager::idle()
             }
             
         } while (true);
+
+        std::vector<Callback> timerCallbacks;//定时器的回调函数
+        getExpireCallback(timerCallbacks);
+        if (!timerCallbacks.empty())//将所有的定时器事件加入到任务队列当中
+        {
+            addMultiJob(timerCallbacks);
+            timerCallbacks.clear();
+        }
+        
 
         for (int i = 0; i < count; i++)
         {
