@@ -1,6 +1,7 @@
 #include "Scheduler.h"
 #include "macro.h"
 #include "util.h"
+#include "Hook.h"
 namespace BASE
 {
 
@@ -180,7 +181,7 @@ void Scheduler::idle()
 //
 void Scheduler::run()
 {
-
+    SetHook(true);
     SetCurrentScheduler();
     pid_t curThreadId = BASE::getThreadId();
 
@@ -220,6 +221,7 @@ void Scheduler::run()
 
         if (j.fiber)
         {
+            cbFiber = j.fiber;
         }
         else if (j.fun) 
         {

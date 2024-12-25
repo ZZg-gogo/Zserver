@@ -27,6 +27,7 @@ set(base_src
 ../base/Scheduler.cpp
 ../base/IoManager.cpp
 ../base/Timer.cpp
+../base/Hook.cpp
 )
 
 set(src
@@ -43,28 +44,32 @@ set(test_util_src
 if(false)
 add_executable(MyServer ${src} ${base_src})
 target_link_libraries(MyServer ${Boost_LIBRARIES})
-target_link_libraries(MyServer PRIVATE yaml-cpp)
+target_link_libraries(MyServer PRIVATE yaml-cpp dl)
 
 add_executable(TestUtil ../test/testUtil.cpp ${base_src})
 target_link_libraries(TestUtil ${Boost_LIBRARIES})
-target_link_libraries(TestUtil PRIVATE yaml-cpp)
+target_link_libraries(TestUtil PRIVATE yaml-cpp dl)
 
 
 add_executable(TestContext ../test/testUcontext.cpp ${test_util_src} )
 
 add_executable(testFiber ../test/testFiber.cpp ${base_src})
 target_link_libraries(testFiber ${Boost_LIBRARIES})
-target_link_libraries(testFiber PRIVATE yaml-cpp) 
+target_link_libraries(testFiber PRIVATE yaml-cpp dl) 
 
 add_executable(testScheduler ../test/testScheduler.cpp ${base_src})
 target_link_libraries(testScheduler ${Boost_LIBRARIES})
-target_link_libraries(testScheduler PRIVATE yaml-cpp)
+target_link_libraries(testScheduler PRIVATE yaml-cpp dl)
+
+
 
 
 endif()
 
-
-
 add_executable(testIoManager ../test/testIoManager.cpp ${base_src})
 target_link_libraries(testIoManager ${Boost_LIBRARIES})
-target_link_libraries(testIoManager PRIVATE yaml-cpp)
+target_link_libraries(testIoManager PRIVATE yaml-cpp dl)
+
+add_executable(testHook ../test/testHook.cpp ${base_src})
+target_link_libraries(testHook ${Boost_LIBRARIES})
+target_link_libraries(testHook PRIVATE yaml-cpp dl)
